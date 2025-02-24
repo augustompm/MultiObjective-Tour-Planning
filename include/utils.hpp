@@ -16,7 +16,7 @@ struct Config {
     static constexpr double SPEED_BUS_PEAK = 20.0;
     static constexpr double SPEED_BUS_OFFPEAK = 30.0;
     static constexpr double SPEED_WALK = 5.0;
-    static constexpr int DAILY_TIME_LIMIT = 12 * 60; // 12 horas em minutos
+    static constexpr int DAILY_TIME_LIMIT = 720; // 12 horas em minutos
 
     struct WeightConfig {
         double total_cost;
@@ -67,9 +67,6 @@ public:
     // Carrega dados das atrações do arquivo
     static std::vector<Attraction> loadAttractions(const std::string& filename);
     
-    // Carrega dados dos hotéis do arquivo
-    static std::vector<Hotel> loadHotels(const std::string& filename);
-
 private:
     static std::pair<double, double> parseCoordinates(const std::string& coords);
     static std::vector<std::string> split(const std::string& s, char delimiter);

@@ -19,9 +19,6 @@ void printSolution(const Solution& solution, size_t index) {
     const auto& objectives = solution.getObjectives();
     
     std::cout << "\n=== Solução #" << (index + 1) << " ===\n";
-    std::cout << "Hotel Base: " << route.getHotel().getName() << "\n";
-    std::cout << "Diária: R$ " << std::fixed << std::setprecision(COST_PRECISION) 
-              << route.getHotel().getDailyRate() << "\n";
     std::cout << "Custo Total: R$ " << std::fixed << std::setprecision(COST_PRECISION) 
               << objectives[0] << "\n";
     std::cout << "Tempo Total: " << std::setprecision(TIME_PRECISION) 
@@ -61,7 +58,7 @@ void exportResults(const std::vector<Solution>& solutions,
         throw std::runtime_error("Erro ao criar arquivo: " + filename);
     }
 
-    file << "Solucao;Hotel;DiariasHotel;CustoTotal;TempoTotal;NumAtracoes;Sequencia\n";
+    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;Sequencia\n";
     
     for (size_t i = 0; i < solutions.size(); ++i) {
         const auto& solution = solutions[i];
@@ -70,8 +67,6 @@ void exportResults(const std::vector<Solution>& solutions,
         
         file << std::fixed << std::setprecision(COST_PRECISION);
         file << (i + 1) << ";";
-        file << route.getHotel().getName() << ";";
-        file << route.getHotel().getDailyRate() << ";";
         file << objectives[0] << ";";
         file << objectives[1] << ";";
         file << std::abs(static_cast<int>(objectives[2])) << ";";
@@ -89,26 +84,19 @@ int main() {
         std::cout << "Carregando dados...\n";
         
         const auto attractions = utils::Parser::loadAttractions("data/attractions.txt");
-        const auto hotels = utils::Parser::loadHotels("data/hotels.txt");
         
         if (attractions.empty()) {
             throw std::runtime_error("Nenhuma atração carregada de attractions.txt");
         }
         std::cout << "Atrações carregadas. Primeira atração: " << attractions[0].getName() << "\n";
 
-        if (hotels.empty()) {
-            throw std::runtime_error("Nenhum hotel carregado de hotels.txt");
-        }
-        std::cout << "Hotéis carregados. Primeiro hotel: " << hotels[0].getName() << "\n";
-        
         std::cout << "\nDados carregados com sucesso:\n";
-        std::cout << "- " << attractions.size() << " atrações turísticas\n";
-        std::cout << "- " << hotels.size() << " hotéis disponíveis\n\n";
+        std::cout << "- " << attractions.size() << " atrações turísticas\n\n";
         
         std::cout << "Configurando NSGA-II...\n";
         NSGA2::Parameters params;
-        params.population_size = 50; // Reduzindo para teste
-        params.max_generations = 50; // Reduzindo para teste
+        params.population_size = 100;
+        params.max_generations = 100;
         params.crossover_rate = 0.9;
         params.mutation_rate = 0.1;
         try {
@@ -118,19 +106,15 @@ int main() {
             throw std::runtime_error(std::string("Erro na validação dos parâmetros: ") + e.what());
         }
         
-        const size_t hotel_index = 0; // Royal Rio Palace Hotel
         std::cout << "=== Configuração da Otimização ===\n";
-        std::cout << "Hotel base: " << hotels[hotel_index].getName() << "\n";
-        std::cout << "Coordenadas do hotel: "
-                  << std::get<0>(hotels[hotel_index].getCoordinates()) << ", "
-                  << std::get<1>(hotels[hotel_index].getCoordinates()) << "\n";
         std::cout << "Tamanho da população: " << params.population_size << "\n";
         std::cout << "Número de gerações: " << params.max_generations << "\n";
         std::cout << "Taxa de crossover: " << params.crossover_rate << "\n";
-        std::cout << "Taxa de mutação: " << params.mutation_rate << "\n\n";
+        std::cout << "Taxa de mutação: " << params.mutation_rate << "\n";
+        std::cout << "Limite de tempo diário: " << utils::Config::DAILY_TIME_LIMIT << " minutos\n\n";
         
         std::cout << "Inicializando NSGA-II...\n";
-        NSGA2 nsga2(attractions, hotels, hotel_index, params);
+        NSGA2 nsga2(attractions, params);
         std::cout << "NSGA-II inicializado com sucesso\n";
         
         std::cout << "Iniciando otimização...\n";
@@ -148,7 +132,12 @@ int main() {
             std::cout << "Tempo de execução: " << duration.count() << " segundos\n";
             std::cout << "Soluções não-dominadas encontradas: " << solutions.size() << "\n\n";
             
-            std::vector<double> reference_point = {10000.0, 1440.0, 0.0};
+            if (solutions.empty()) {
+                std::cout << "Nenhuma solução válida encontrada. Considere relaxar as restrições.\n";
+                return 0;
+            }
+            
+            std::vector<double> reference_point = {10000.0, 720.0, 0.0};
             const double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
             const double spread = utils::Metrics::calculateSpread(solutions);
             

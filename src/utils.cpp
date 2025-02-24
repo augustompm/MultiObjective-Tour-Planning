@@ -145,38 +145,6 @@ std::vector<Attraction> Parser::loadAttractions(const std::string& filename) {
     return attractions;
 }
 
-std::vector<Hotel> Parser::loadHotels(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open hotels file: " + filename);
-    }
-
-    std::vector<Hotel> hotels;
-    std::string line;
-    
-    // Pula a linha de cabeçalho
-    std::getline(file, line);
-    
-    while (std::getline(file, line)) {
-        if (line.empty() || line[0] == '#') continue;
-        
-        auto parts = split(line, ';');
-        if (parts.size() != 3) {
-            throw std::runtime_error("Invalid hotel data format");
-        }
-        
-        auto coords = parseCoordinates(parts[2]);
-        hotels.emplace_back(
-            parts[0],                          // nome
-            std::stod(parts[1]),              // diária
-            coords.first,                      // latitude
-            coords.second                      // longitude
-        );
-    }
-    
-    return hotels;
-}
-
 std::pair<double, double> Parser::parseCoordinates(const std::string& coords) {
     auto parts = split(coords, ',');
     if (parts.size() != 2) {

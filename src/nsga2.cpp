@@ -18,12 +18,28 @@ NSGA2::Individual::Individual(std::vector<int> chromosome)
 
 void NSGA2::Individual::evaluate(const NSGA2& algorithm) {
     Route route = constructRoute(algorithm);
+    
+    // Se a rota estiver vazia, penaliza fortemente
     if (route.getSequence().empty()) {
-        throw std::runtime_error("Empty route created in evaluation");
+        objectives_ = {
+            10000.0,                          // Custo máximo
+            utils::Config::DAILY_TIME_LIMIT,  // Tempo máximo
+            0.0                               // Nenhuma atração visitada
+        };
+        return;
     }
+    
+    double total_time = route.getTotalTime();
+    double time_penalty = 0.0;
+    
+    // Aplica penalidade se ultrapassar o limite
+    if (total_time > utils::Config::DAILY_TIME_LIMIT) {
+        time_penalty = (total_time - utils::Config::DAILY_TIME_LIMIT) * 10.0;
+    }
+    
     objectives_ = {
         route.getTotalCost(),
-        route.getTotalTime(),
+        total_time + time_penalty,
         -static_cast<double>(route.getNumAttractions())
     };
 }
@@ -50,37 +66,42 @@ bool NSGA2::Individual::dominates(const Individual& other) const {
 }
 
 Route NSGA2::Individual::constructRoute(const NSGA2& algorithm) const {
-    Route route(algorithm.hotels_[algorithm.hotel_index_]);
+    Route route;
     if (algorithm.attractions_.empty()) {
         throw std::runtime_error("No attractions available");
     }
+    
+    // Usamos o cromossomo como uma ordem de prioridade para visitar as atrações
     for (const auto& idx : chromosome_) {
         if (idx >= 0 && static_cast<size_t>(idx) < algorithm.attractions_.size()) {
-            // Passa uma referência para a atração real no vetor attractions_
-            const Attraction& attr = algorithm.attractions_[idx];
-            route.addAttraction(attr);
+            // Verifica se adicionar esta atração ainda mantém o tempo dentro do limite
+            Route temp_route = route;
+            temp_route.addAttraction(algorithm.attractions_[idx]);
+            double new_total_time = temp_route.getTotalTime();
+            
+            // Só adiciona se estiver dentro do limite de tempo
+            if (new_total_time <= utils::Config::DAILY_TIME_LIMIT) {
+                route.addAttraction(algorithm.attractions_[idx]);
+            }
+            // Caso contrário, ignora esta atração e tenta a próxima no cromossomo
         }
     }
     return route;
 }
 
-NSGA2::NSGA2(const std::vector<Attraction>& attractions,
-             const std::vector<Hotel>& hotels,
-             size_t hotel_index,
-             Parameters params)
+NSGA2::NSGA2(const std::vector<Attraction>& attractions, Parameters params)
     : attractions_(attractions)
-    , hotels_(hotels)
-    , hotel_index_(hotel_index)
     , params_(std::move(params))
     , rng_(std::random_device{}()) {
     params_.validate();
-    if (hotel_index >= hotels.size()) throw std::runtime_error("Invalid hotel index");
     if (attractions.empty()) throw std::runtime_error("No attractions provided");
 }
 
 void NSGA2::initializePopulation() {
     population_.clear();
     population_.reserve(params_.population_size);
+    
+    // Criar um cromossomo base com índices sequenciais
     std::vector<int> base_chrom(attractions_.size());
     std::iota(base_chrom.begin(), base_chrom.end(), 0);
 
@@ -154,7 +175,6 @@ std::vector<NSGA2::Front> NSGA2::fastNonDominatedSort(const Population& pop) con
     return fronts;
 }
 
-// Nova implementação de calculateCrowdingDistances
 void NSGA2::calculateCrowdingDistances(Front& front) const {
     if (front.empty()) return;
     if (front.size() == 1) {
@@ -353,6 +373,7 @@ NSGA2::Population NSGA2::selectNextGeneration(const Population& parents, const P
     return next_gen;
 }
 
+// Função run() modificada conforme solicitado
 std::vector<Solution> NSGA2::run() {
     initializePopulation();
     
@@ -362,13 +383,33 @@ std::vector<Solution> NSGA2::run() {
         logProgress(gen, population_);
     }
 
+    // Filtrar soluções válidas, mas com critérios mais flexíveis
     std::vector<Solution> solutions;
     auto final_front = fastNonDominatedSort(population_)[0];
-    solutions.reserve(final_front.size());
     
+    // Adicionar soluções diretamente sem verificar route.isValid()
     for (const auto& ind : final_front) {
-        solutions.push_back(Solution(ind->constructRoute(*this)));
+        Route route = ind->constructRoute(*this);
+        solutions.push_back(Solution(route));
     }
+    
+    // Filtrar após criar as soluções, priorizando atrações visitadas
+    solutions.erase(
+        std::remove_if(solutions.begin(), solutions.end(), 
+            [](const Solution& sol) {
+                double total_time = sol.getObjectives()[1];
+                // Aceita rotas que estão dentro ou ligeiramente acima do limite
+                return total_time > utils::Config::DAILY_TIME_LIMIT * 1.1;
+            }), 
+        solutions.end()
+    );
+    
+    // Ordenar as soluções por número de atrações (descendente)
+    std::sort(solutions.begin(), solutions.end(), 
+              [](const Solution& a, const Solution& b) {
+                  return a.getObjectives()[2] < b.getObjectives()[2];
+              });
+    
     return solutions;
 }
 
@@ -390,7 +431,10 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
     solutions.reserve(front.size());
     
     for (const auto& ind : front) {
-        solutions.push_back(Solution(ind->constructRoute(*this)));
+        Route route = ind->constructRoute(*this);
+        if (route.isValid()) {
+            solutions.push_back(Solution(route));
+        }
     }
     
     std::vector<double> reference_point = {10000.0, 1440.0, 0.0};

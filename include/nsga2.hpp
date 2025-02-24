@@ -62,10 +62,7 @@ protected:
     };
 
 public:
-    NSGA2(const std::vector<Attraction>& attractions, 
-          const std::vector<Hotel>& hotels,
-          size_t hotel_index,
-          Parameters params = Parameters());
+    NSGA2(const std::vector<Attraction>& attractions, Parameters params = Parameters());
 
     NSGA2(const NSGA2&) = delete;
     NSGA2& operator=(const NSGA2&) = delete;
@@ -96,11 +93,9 @@ private:
     std::vector<int> repairChromosome(std::vector<int>& chrom) const;
 
     const std::vector<Attraction>& attractions_;
-    const std::vector<Hotel>& hotels_;
-    const size_t hotel_index_;
     const Parameters params_;
     Population population_;
-    mutable std::mt19937 rng_{std::random_device{}()};  // Changed to mutable
+    mutable std::mt19937 rng_{std::random_device{}()};
 };
 
 } // namespace tourist

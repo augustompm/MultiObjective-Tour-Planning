@@ -3,6 +3,7 @@
 #include "models.hpp"
 #include "utils.hpp"
 #include <stdexcept>
+#include <algorithm>
 
 namespace tourist {
 
@@ -31,38 +32,20 @@ Attraction::Attraction(std::string name, double lat, double lon, int visit_time,
     }
 }
 
-// Hotel Implementation
-Hotel::Hotel(std::string name, double daily_rate, double lat, double lon)
-    : name_(std::move(name))
-    , daily_rate_(daily_rate)
-    , latitude_(lat)
-    , longitude_(lon) {
-    
-    if (daily_rate_ < 0) {
-        throw std::invalid_argument("Daily rate cannot be negative");
-    }
-}
-
 // Route Implementation
-Route::Route(const Hotel& hotel) 
-    : hotel_(hotel) {
+Route::Route() {}
+
+Route::Route(const std::vector<const Attraction*>& attractions)
+    : sequence_(attractions) {
 }
 
-Route::Route(const Hotel& hotel, const std::vector<Attraction>& attractions)
-    : hotel_(hotel) {
-    for (const auto& attraction : attractions) {
-        addAttraction(attraction);
-    }
-}
-
-// Fix to prevent storing pointers to temporary references
 void Route::addAttraction(const Attraction& attraction) {
     // Store the pointer to the actual Attraction object, not to the reference
     sequence_.push_back(&attraction);
 }
 
 double Route::getTotalCost() const {
-    double total = hotel_.getDailyRate() * 2; // 2 dias
+    double total = 0;
     
     // Custo das atrações
     for (const auto* attraction : sequence_) {
@@ -81,33 +64,67 @@ double Route::getTotalCost() const {
     return total;
 }
 
+// Função getTotalTime() modificada conforme solicitado
 double Route::getTotalTime() const {
-    double total = 0;
+    // Se não houver atrações, retorna 0
+    if (sequence_.empty()) return 0.0;
+    
+    double total_time = 0.0;
     int current_time = 9 * 60; // Início às 9h
     
-    for (size_t i = 0; i < sequence_.size(); ++i) {
-        // Tempo de viagem
-        if (i > 0) {
-            auto dist = utils::Distance::calculate(
-                sequence_[i-1]->getCoordinates(),
-                sequence_[i]->getCoordinates()
-            );
-            auto travel_time = utils::Distance::calculateTravelTime(dist, utils::Config::SPEED_CAR);
-            total += travel_time;
-            current_time += travel_time;
+    // Adiciona o tempo de visita da primeira atração
+    if (!sequence_[0]->isOpenAt(current_time)) {
+        // Espera até que a primeira atração abra, se necessário
+        current_time = std::max(current_time, sequence_[0]->getOpeningTime());
+        // Se a atração já estiver fechada, a rota é inválida
+        if (current_time > sequence_[0]->getClosingTime()) {
+            return utils::Config::DAILY_TIME_LIMIT + 1;
         }
-        
-        // Verifica se atração está aberta
-        if (!sequence_[i]->isOpenAt(current_time)) {
-            return utils::Config::DAILY_TIME_LIMIT + 1; // Rota inválida
-        }
-        
-        // Adiciona tempo de visita
-        total += sequence_[i]->getVisitTime();
-        current_time += sequence_[i]->getVisitTime();
     }
     
-    return total;
+    total_time += sequence_[0]->getVisitTime();
+    current_time += sequence_[0]->getVisitTime();
+    
+    // Calcula para as atrações subsequentes
+    for (size_t i = 0; i < sequence_.size() - 1; ++i) {
+        auto dist = utils::Distance::calculate(
+            sequence_[i]->getCoordinates(),
+            sequence_[i+1]->getCoordinates()
+        );
+        
+        // Determina a velocidade com base na distância
+        double speed = utils::Config::SPEED_CAR;
+        if (dist < 1.0) {
+            speed = utils::Config::SPEED_WALK;
+        } else if (dist < 10.0) {
+            // Determina se é horário de pico
+            bool is_peak_hour = ((current_time / 60) >= 7 && (current_time / 60) <= 10) || 
+                                ((current_time / 60) >= 17 && (current_time / 60) <= 20);
+            speed = is_peak_hour ? utils::Config::SPEED_BUS_PEAK : utils::Config::SPEED_BUS_OFFPEAK;
+        }
+        
+        auto travel_time = utils::Distance::calculateTravelTime(dist, speed);
+        total_time += travel_time;
+        current_time += travel_time;
+        
+        // Verifica se a próxima atração está aberta na chegada
+        if (!sequence_[i+1]->isOpenAt(current_time)) {
+            // Se ainda vai abrir, espera
+            if (current_time < sequence_[i+1]->getOpeningTime()) {
+                int wait_time = sequence_[i+1]->getOpeningTime() - current_time;
+                total_time += wait_time;
+                current_time += wait_time;
+            } else {
+                // Se já fechou, a rota é inválida
+                return utils::Config::DAILY_TIME_LIMIT + 1;
+            }
+        }
+        
+        total_time += sequence_[i+1]->getVisitTime();
+        current_time += sequence_[i+1]->getVisitTime();
+    }
+    
+    return total_time;
 }
 
 bool Route::isValid() const {
@@ -119,22 +136,26 @@ bool Route::isValidSequence() const {
     
     int current_time = 9 * 60; // Início às 9h
     
-    for (size_t i = 0; i < sequence_.size(); ++i) {
-        // Calcula tempo de chegada
-        if (i > 0) {
-            auto dist = utils::Distance::calculate(
-                sequence_[i-1]->getCoordinates(),
-                sequence_[i]->getCoordinates()
-            );
-            current_time += utils::Distance::calculateTravelTime(dist, utils::Config::SPEED_CAR);
-        }
+    // Verifica se a primeira atração está aberta
+    if (!sequence_[0]->isOpenAt(current_time)) {
+        return false;
+    }
+    
+    current_time += sequence_[0]->getVisitTime();
+    
+    for (size_t i = 0; i < sequence_.size() - 1; ++i) {
+        auto dist = utils::Distance::calculate(
+            sequence_[i]->getCoordinates(),
+            sequence_[i+1]->getCoordinates()
+        );
+        current_time += utils::Distance::calculateTravelTime(dist, utils::Config::SPEED_CAR);
         
         // Verifica horário de funcionamento
-        if (!sequence_[i]->isOpenAt(current_time)) {
+        if (!sequence_[i+1]->isOpenAt(current_time)) {
             return false;
         }
         
-        current_time += sequence_[i]->getVisitTime();
+        current_time += sequence_[i+1]->getVisitTime();
     }
     
     return true;

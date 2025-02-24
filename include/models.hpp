@@ -50,37 +50,13 @@ private:
     int closing_time_;      // em minutos desde meia-noite
 };
 
-class Hotel {
-public:
-    Hotel(std::string name, double daily_rate, double lat, double lon);
-
-    // Getters
-    const std::string& getName() const { return name_; }
-    double getDailyRate() const { return daily_rate_; }
-    std::pair<double, double> getCoordinates() const { return {latitude_, longitude_}; }
-
-    // Identidade
-    bool operator==(const Hotel& other) const {
-        return name_ == other.name_ &&
-               std::abs(daily_rate_ - other.daily_rate_) < 1e-10 &&
-               std::abs(latitude_ - other.latitude_) < 1e-10 &&
-               std::abs(longitude_ - other.longitude_) < 1e-10;
-    }
-
-private:
-    std::string name_;
-    double daily_rate_;
-    double latitude_, longitude_;
-};
-
 class Route {
 public:
     // Constructores
-    Route(const Hotel& hotel);
-    Route(const Hotel& hotel, const std::vector<Attraction>& attractions);
+    Route();
+    explicit Route(const std::vector<const Attraction*>& attractions);
 
     // Getters
-    const Hotel& getHotel() const { return hotel_; }
     const std::vector<const Attraction*>& getSequence() const { return sequence_; }
     
     // Operações
@@ -90,7 +66,7 @@ public:
     bool empty() const { return sequence_.empty(); }
     
     // Cálculos
-    double getTotalCost() const;   // Custo total incluindo hotel, transporte e atrações
+    double getTotalCost() const;   // Custo total incluindo transporte e atrações
     double getTotalTime() const;   // Tempo total incluindo visitas e deslocamentos
     int getNumAttractions() const { return static_cast<int>(sequence_.size()); }
     
@@ -100,14 +76,12 @@ public:
     
     // Identidade
     bool operator==(const Route& other) const {
-        return hotel_ == other.hotel_ &&
-               sequence_.size() == other.sequence_.size() &&
+        return sequence_.size() == other.sequence_.size() &&
                std::equal(sequence_.begin(), sequence_.end(), other.sequence_.begin(),
                         [](const Attraction* a, const Attraction* b) { return *a == *b; });
     }
 
 private:
-    const Hotel& hotel_;
     std::vector<const Attraction*> sequence_;
 
     bool checkTimeConstraints() const;
