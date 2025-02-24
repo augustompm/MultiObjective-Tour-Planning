@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/tourist_route.dir/src/main.cpp.o -o bin/tourist_route  libtourist_lib.a 

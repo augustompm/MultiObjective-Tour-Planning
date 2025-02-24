@@ -1,0 +1,2 @@
+/usr/bin/ar qc libtourist_lib.a CMakeFiles/tourist_lib.dir/src/models.cpp.o CMakeFiles/tourist_lib.dir/src/utils.cpp.o CMakeFiles/tourist_lib.dir/src/nsga2.cpp.o
+/usr/bin/ranlib libtourist_lib.a
