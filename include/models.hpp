@@ -11,7 +11,14 @@
 #include <cmath>
 #include <algorithm>
 
+// Include utils.hpp to get TransportMode enum
+#include "utils.hpp"
+
 namespace tourist {
+
+// Forward declarations to resolve circular dependencies
+class Solution;
+class Route;
 
 class Attraction {
 public:
@@ -36,9 +43,7 @@ public:
 
     // Identidade
     bool operator==(const Attraction& other) const {
-        return name_ == other.name_ &&
-               std::abs(latitude_ - other.latitude_) < 1e-10 &&
-               std::abs(longitude_ - other.longitude_) < 1e-10;
+        return name_ == other.name_;
     }
 
 private:
@@ -50,6 +55,30 @@ private:
     int closing_time_;      // em minutos desde meia-noite
 };
 
+// Nova classe para representar um segmento da rota
+class RouteSegment {
+public:
+    RouteSegment(const Attraction* from, const Attraction* to, utils::TransportMode mode);
+    
+    // Getters
+    const Attraction* getFromAttraction() const { return from_; }
+    const Attraction* getToAttraction() const { return to_; }
+    utils::TransportMode getTransportMode() const { return mode_; }
+    
+    // Cálculos
+    double getDistance() const;
+    double getTravelTime() const;
+    double getTravelCost() const;
+    
+    // Representação em string
+    std::string toString() const;
+
+private:
+    const Attraction* from_;
+    const Attraction* to_;
+    utils::TransportMode mode_;
+};
+
 class Route {
 public:
     // Constructores
@@ -57,18 +86,20 @@ public:
     explicit Route(const std::vector<const Attraction*>& attractions);
 
     // Getters
-    const std::vector<const Attraction*>& getSequence() const { return sequence_; }
+    const std::vector<const Attraction*>& getAttractions() const { return attractions_; }
+    const std::vector<utils::TransportMode>& getTransportModes() const { return transport_modes_; }
+    const std::vector<RouteSegment> getSegments() const;
     
     // Operações
-    void addAttraction(const Attraction& attraction);
-    void clear() { sequence_.clear(); }
-    size_t size() const { return sequence_.size(); }
-    bool empty() const { return sequence_.empty(); }
+    void addAttraction(const Attraction& attraction, utils::TransportMode mode = utils::TransportMode::CAR);
+    void clear() { attractions_.clear(); transport_modes_.clear(); }
+    size_t size() const { return attractions_.size(); }
+    bool empty() const { return attractions_.empty(); }
     
     // Cálculos
     double getTotalCost() const;   // Custo total incluindo transporte e atrações
     double getTotalTime() const;   // Tempo total incluindo visitas e deslocamentos
-    int getNumAttractions() const { return static_cast<int>(sequence_.size()); }
+    int getNumAttractions() const { return static_cast<int>(attractions_.size()); }
     
     // Validação
     bool isValid() const;
@@ -76,13 +107,15 @@ public:
     
     // Identidade
     bool operator==(const Route& other) const {
-        return sequence_.size() == other.sequence_.size() &&
-               std::equal(sequence_.begin(), sequence_.end(), other.sequence_.begin(),
-                        [](const Attraction* a, const Attraction* b) { return *a == *b; });
+        return attractions_.size() == other.attractions_.size() &&
+               std::equal(attractions_.begin(), attractions_.end(), other.attractions_.begin(),
+                        [](const Attraction* a, const Attraction* b) { return *a == *b; }) &&
+               transport_modes_ == other.transport_modes_;
     }
 
 private:
-    std::vector<const Attraction*> sequence_;
+    std::vector<const Attraction*> attractions_;
+    std::vector<utils::TransportMode> transport_modes_;
 
     bool checkTimeConstraints() const;
     bool checkMaxDailyTime() const;
@@ -104,11 +137,12 @@ public:
     
     // Identidade
     bool operator==(const Solution& other) const {
-        return route_ == other.route_ && objectives_ == other.objectives_;
+        return route_ == other.route_ && getObjectives() == other.getObjectives();
     }
 
 private:
     Route route_;
+    std::vector<double> objectives_;
     void calculateObjectives();  // Calcula os objetivos baseado na rota
 };
 

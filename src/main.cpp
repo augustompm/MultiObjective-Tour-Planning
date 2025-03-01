@@ -6,12 +6,14 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 using namespace tourist;
 
 namespace {
 constexpr size_t TIME_PRECISION = 1;
 constexpr size_t COST_PRECISION = 2;
+constexpr size_t DIST_PRECISION = 0;
 }
 
 void printSolution(const Solution& solution, size_t index) {
@@ -26,22 +28,60 @@ void printSolution(const Solution& solution, size_t index) {
     std::cout << "Atrações Visitadas: " << std::abs(static_cast<int>(objectives[2])) << "\n";
     
     std::cout << "\nRoteiro Detalhado:\n";
-    const auto& sequence = route.getSequence();
-    for (size_t i = 0; i < sequence.size(); ++i) {
-        const auto* attraction = sequence[i];
-        auto [lat, lon] = attraction->getCoordinates();
+    const auto& attractions = route.getAttractions();
+    const auto& transport_modes = route.getTransportModes();
+    
+    if (attractions.empty()) {
+        std::cout << "Nenhuma atração no roteiro.\n";
+        return;
+    }
+    
+    // Primeira atração
+    std::cout << "1. " << attractions[0]->getName() << "\n";
+    std::cout << "   - Tempo de visita: " << attractions[0]->getVisitTime() << " minutos\n";
+    std::cout << "   - Custo: R$ " << std::fixed << std::setprecision(COST_PRECISION) 
+              << attractions[0]->getCost() << "\n";
+    
+    int open_hour = attractions[0]->getOpeningTime() / 60;
+    int open_min = attractions[0]->getOpeningTime() % 60;
+    int close_hour = attractions[0]->getClosingTime() / 60;
+    int close_min = attractions[0]->getClosingTime() % 60;
+    
+    std::cout << "   - Horário: " 
+              << std::setfill('0') << std::setw(2) << open_hour << ":" 
+              << std::setfill('0') << std::setw(2) << open_min << " - "
+              << std::setfill('0') << std::setw(2) << close_hour << ":" 
+              << std::setfill('0') << std::setw(2) << close_min << "\n";
+    
+    // Atrações subsequentes com informações de transporte
+    for (size_t i = 1; i < attractions.size(); ++i) {
+        const auto* attraction = attractions[i];
+        utils::TransportMode mode = transport_modes[i-1];
         
-        std::cout << (i + 1) << ". " << attraction->getName() << "\n";
+        // Calcula distância e tempo entre atrações
+        double distance = utils::Transport::getDistance(
+            attractions[i-1]->getName(), attraction->getName(), mode);
+        double travel_time = utils::Transport::getTravelTime(
+            attractions[i-1]->getName(), attraction->getName(), mode);
+        double travel_cost = utils::Transport::getTravelCost(
+            attractions[i-1]->getName(), attraction->getName(), mode);
+        
+        std::cout << "\n" << (i + 1) << ". " << attraction->getName() << "\n";
+        std::cout << "   - Transporte: " << utils::Transport::getModeString(mode) << "\n";
+        std::cout << "   - Distância: " << std::fixed << std::setprecision(DIST_PRECISION) 
+                  << distance << " metros\n";
+        std::cout << "   - Tempo de deslocamento: " << std::setprecision(TIME_PRECISION) 
+                  << travel_time << " minutos\n";
+        std::cout << "   - Custo de transporte: R$ " << std::setprecision(COST_PRECISION) 
+                  << travel_cost << "\n";
         std::cout << "   - Tempo de visita: " << attraction->getVisitTime() << " minutos\n";
-        std::cout << "   - Custo: R$ " << std::fixed << std::setprecision(COST_PRECISION) 
+        std::cout << "   - Custo de entrada: R$ " << std::fixed << std::setprecision(COST_PRECISION) 
                   << attraction->getCost() << "\n";
-        std::cout << "   - Coordenadas: (" << std::fixed << std::setprecision(6) 
-                  << lat << ", " << lon << ")\n";
         
-        int open_hour = attraction->getOpeningTime() / 60;
-        int open_min = attraction->getOpeningTime() % 60;
-        int close_hour = attraction->getClosingTime() / 60;
-        int close_min = attraction->getClosingTime() % 60;
+        open_hour = attraction->getOpeningTime() / 60;
+        open_min = attraction->getOpeningTime() % 60;
+        close_hour = attraction->getClosingTime() / 60;
+        close_min = attraction->getClosingTime() % 60;
         
         std::cout << "   - Horário: " 
                   << std::setfill('0') << std::setw(2) << open_hour << ":" 
@@ -51,19 +91,20 @@ void printSolution(const Solution& solution, size_t index) {
     }
 }
 
-void exportResults(const std::vector<Solution>& solutions, 
-                  const std::string& filename) {
+void exportResults(const std::vector<Solution>& solutions, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Erro ao criar arquivo: " + filename);
     }
 
-    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;Sequencia\n";
+    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;Sequencia;ModosTransporte\n";
     
     for (size_t i = 0; i < solutions.size(); ++i) {
         const auto& solution = solutions[i];
         const auto& objectives = solution.getObjectives();
         const auto& route = solution.getRoute();
+        const auto& attractions = route.getAttractions();
+        const auto& modes = route.getTransportModes();
         
         file << std::fixed << std::setprecision(COST_PRECISION);
         file << (i + 1) << ";";
@@ -71,8 +112,15 @@ void exportResults(const std::vector<Solution>& solutions,
         file << objectives[1] << ";";
         file << std::abs(static_cast<int>(objectives[2])) << ";";
         
-        for (const auto* attraction : route.getSequence()) {
+        // Sequência de atrações
+        for (const auto* attraction : attractions) {
             file << attraction->getName() << "|";
+        }
+        file << ";";
+        
+        // Modos de transporte
+        for (const auto& mode : modes) {
+            file << utils::Transport::getModeString(mode) << "|";
         }
         file << "\n";
     }
@@ -80,25 +128,47 @@ void exportResults(const std::vector<Solution>& solutions,
 
 int main() {
     try {
-        std::cout << "\n=== Planejador de Rotas Turísticas ===\n\n";
+        std::cout << "\n=== Planejador de Rotas Turísticas Multiobjetivo ===\n\n";
         std::cout << "Carregando dados...\n";
         
+        // Encontrar os arquivos de matriz mais recentes
+        const std::string osrm_path = "../OSRM/";  // Use relative path from build directory
+        const std::string car_dist_file = osrm_path + "matriz_distancias_carro_metros_2025-02-25_11-55-15.csv";
+        const std::string walk_dist_file = osrm_path + "matriz_distancias_pe_metros_2025-02-25_11-55-15.csv";
+        const std::string car_time_file = osrm_path + "matriz_tempos_carro_min_2025-02-25_11-55-15.csv";
+        const std::string walk_time_file = osrm_path + "matriz_tempos_pe_min_2025-02-25_11-55-15.csv";
+        // Carregar as matrizes de distância e tempo
+        std::cout << "Carregando matrizes de distância e tempo...\n";
+        if (!utils::Parser::loadTransportMatrices(car_dist_file, walk_dist_file, car_time_file, walk_time_file)) {
+            throw std::runtime_error("Falha ao carregar as matrizes de transporte");
+        }
+        std::cout << "Matrizes carregadas com sucesso.\n";
+        
+        // Carregar atrações
         const auto attractions = utils::Parser::loadAttractions("data/attractions.txt");
         
         if (attractions.empty()) {
             throw std::runtime_error("Nenhuma atração carregada de attractions.txt");
         }
-        std::cout << "Atrações carregadas. Primeira atração: " << attractions[0].getName() << "\n";
-
-        std::cout << "\nDados carregados com sucesso:\n";
-        std::cout << "- " << attractions.size() << " atrações turísticas\n\n";
+        std::cout << "Atrações carregadas: " << attractions.size() << "\n";
         
-        std::cout << "Configurando NSGA-II...\n";
+        // Verificar se todas as atrações estão nas matrizes
+        std::cout << "Verificando compatibilidade de atrações com as matrizes...\n";
+        for (const auto& attraction : attractions) {
+            if (utils::TransportMatrices::attraction_indices.find(attraction.getName()) == 
+                utils::TransportMatrices::attraction_indices.end()) {
+                std::cout << "AVISO: Atração '" << attraction.getName() 
+                          << "' não encontrada nas matrizes de transporte.\n";
+            }
+        }
+        
+        std::cout << "\nConfigurando NSGA-II...\n";
         NSGA2::Parameters params;
         params.population_size = 100;
         params.max_generations = 100;
         params.crossover_rate = 0.9;
         params.mutation_rate = 0.1;
+        
         try {
             std::cout << "Validando parâmetros...\n";
             params.validate();
@@ -111,7 +181,9 @@ int main() {
         std::cout << "Número de gerações: " << params.max_generations << "\n";
         std::cout << "Taxa de crossover: " << params.crossover_rate << "\n";
         std::cout << "Taxa de mutação: " << params.mutation_rate << "\n";
-        std::cout << "Limite de tempo diário: " << utils::Config::DAILY_TIME_LIMIT << " minutos\n\n";
+        std::cout << "Limite de tempo diário: " << utils::Config::DAILY_TIME_LIMIT << " minutos\n";
+        std::cout << "Preferência por caminhada: < " << utils::Config::WALK_TIME_PREFERENCE << " minutos\n";
+        std::cout << "Custo de carro: R$ " << utils::Config::COST_CAR_PER_KM << " por km\n\n";
         
         std::cout << "Inicializando NSGA-II...\n";
         NSGA2 nsga2(attractions, params);
@@ -137,7 +209,7 @@ int main() {
                 return 0;
             }
             
-            std::vector<double> reference_point = {10000.0, 720.0, 0.0};
+            std::vector<double> reference_point = {10000.0, utils::Config::DAILY_TIME_LIMIT * 1.5, 0.0};
             const double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
             const double spread = utils::Metrics::calculateSpread(solutions);
             

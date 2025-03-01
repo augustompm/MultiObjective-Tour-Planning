@@ -1,22 +1,40 @@
 #pragma once
 
-#include "models.hpp"
 #include <string>
 #include <vector>
 #include <cmath>
+#include <unordered_map>
 
 namespace tourist {
+
+// Forward declarations
+class Attraction;
+class Solution;
+
 namespace utils {
+
+// Enumeração para modos de transporte
+enum class TransportMode {
+    WALK,
+    CAR
+};
+
+// Estrutura para armazenar as matrizes de distância e tempo
+struct TransportMatrices {
+    static std::vector<std::vector<double>> car_distances;  // em metros
+    static std::vector<std::vector<double>> walk_distances; // em metros
+    static std::vector<std::vector<double>> car_times;      // em minutos
+    static std::vector<std::vector<double>> walk_times;     // em minutos
+    static std::unordered_map<std::string, size_t> attraction_indices;
+    static std::vector<std::string> attraction_names;
+    static bool matrices_loaded;
+};
 
 // Configurações globais do sistema
 struct Config {
-    static constexpr double COST_CAR_PER_10KM = 6.0;
-    static constexpr double COST_BUS = 4.30;
-    static constexpr double SPEED_CAR = 40.0;
-    static constexpr double SPEED_BUS_PEAK = 20.0;
-    static constexpr double SPEED_BUS_OFFPEAK = 30.0;
-    static constexpr double SPEED_WALK = 5.0;
-    static constexpr int DAILY_TIME_LIMIT = 720; // 12 horas em minutos
+    static constexpr double COST_CAR_PER_KM = 6.0;     // R$6 por km
+    static constexpr int DAILY_TIME_LIMIT = 840;       // 14 horas em minutos
+    static constexpr int WALK_TIME_PREFERENCE = 15;    // preferência por caminhada abaixo de 15 min
 
     struct WeightConfig {
         double total_cost;
@@ -29,21 +47,23 @@ struct Config {
     static WeightConfig getCostPriorityWeights() { return {-3.0, -1.5, 1.0}; }
 };
 
-// Cálculos de distância e tempo
-class Distance {
+// Classe para funções relacionadas a transporte
+class Transport {
 public:
-    // Calcula distância em km entre dois pontos usando fórmula de Haversine
-    static double calculate(std::pair<double, double> p1, std::pair<double, double> p2);
+    // Obtém a distância entre duas atrações usando o modo especificado
+    static double getDistance(const std::string& from, const std::string& to, TransportMode mode);
     
-    // Calcula tempo de viagem baseado na distância e modo de transporte
-    static double calculateTravelTime(double distance, double speed);
+    // Obtém o tempo de viagem entre duas atrações usando o modo especificado
+    static double getTravelTime(const std::string& from, const std::string& to, TransportMode mode);
     
-    // Calcula custo de transporte baseado na distância
-    static double calculateTravelCost(double distance);
-
-private:
-    static constexpr double EARTH_RADIUS = 6371.0; // Raio da Terra em km
-    static constexpr double DEG_TO_RAD = M_PI / 180.0;
+    // Calcula o custo de transporte entre duas atrações usando o modo especificado
+    static double getTravelCost(const std::string& from, const std::string& to, TransportMode mode);
+    
+    // Determina o modo de transporte recomendado entre duas atrações (baseado na regra de 15 min)
+    static TransportMode determinePreferredMode(const std::string& from, const std::string& to);
+    
+    // Converte o modo de transporte para string para exibição
+    static std::string getModeString(TransportMode mode);
 };
 
 // Métricas de avaliação
@@ -67,9 +87,16 @@ public:
     // Carrega dados das atrações do arquivo
     static std::vector<Attraction> loadAttractions(const std::string& filename);
     
+    // Carrega as matrizes de distância e tempo dos arquivos CSV
+    static bool loadTransportMatrices(const std::string& car_distances_file,
+                                     const std::string& walk_distances_file,
+                                     const std::string& car_times_file,
+                                     const std::string& walk_times_file);
+    
 private:
     static std::pair<double, double> parseCoordinates(const std::string& coords);
     static std::vector<std::string> split(const std::string& s, char delimiter);
+    static std::vector<std::vector<double>> parseMatrixFile(const std::string& filename);
 };
 
 } // namespace utils

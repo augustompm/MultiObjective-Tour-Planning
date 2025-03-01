@@ -42,6 +42,7 @@ protected:
     class Individual final {
     public:
         explicit Individual(std::vector<int> chromosome);
+        explicit Individual(std::vector<int> chromosome, std::vector<utils::TransportMode> transport_modes);
         void evaluate(const NSGA2& algorithm);
         bool dominates(const Individual& other) const;
         Route constructRoute(const NSGA2& algorithm) const;
@@ -53,11 +54,15 @@ protected:
         void setCrowdingDistance(double distance) { crowding_distance_ = distance; }
 
     private:
-        std::vector<int> chromosome_;
-        std::vector<double> objectives_;
-        int rank_{0};
-        double crowding_distance_{0.0};
+        std::vector<int> chromosome_;                        // Índices das atrações a visitar
+        std::vector<utils::TransportMode> transport_modes_;  // Modo de transporte entre atrações adjacentes
+        std::vector<double> objectives_;                     // Valores dos objetivos [custo, tempo, -atrações]
+        int rank_{0};                                       // Rank na fronteira de Pareto
+        double crowding_distance_{0.0};                     // Distância de crowding para preservar diversidade
 
+        // Escolhe o modo de transporte ideal para cada trecho da rota
+        void determineTransportModes(const NSGA2& algorithm);
+        
         friend class NSGA2;
     };
 
@@ -69,6 +74,7 @@ public:
     NSGA2(NSGA2&&) = delete;
     NSGA2& operator=(NSGA2&&) = delete;
 
+    // Executa o algoritmo e retorna as soluções não dominadas
     std::vector<Solution> run() override;
 
 private:
@@ -76,22 +82,30 @@ private:
     using Population = std::vector<IndividualPtr>;
     using Front = std::vector<IndividualPtr>;
 
+    // Métodos principais do NSGA-II
     void initializePopulation();
     void evaluatePopulation(Population& pop);
     std::vector<Front> fastNonDominatedSort(const Population& pop) const;
     void calculateCrowdingDistances(Front& front) const;
     Population createOffspring(const Population& parents);
     Population selectNextGeneration(const Population& parents, const Population& offspring);
+    
+    // Operadores genéticos
     IndividualPtr tournamentSelection(const Population& pop);
     IndividualPtr crossover(const IndividualPtr& parent1, const IndividualPtr& parent2);
     void mutate(IndividualPtr individual);
+    void mutateTransportModes(IndividualPtr individual);
+    
+    // Utilitários
     void logProgress(size_t generation, const Population& pop) const;
     double calculateHypervolume(const Population& pop) const;
     static bool compareByRankAndCrowding(const IndividualPtr& a, const IndividualPtr& b);
 
+    // Validação de cromossomos
     bool isValidChromosome(const std::vector<int>& chrom) const;
     std::vector<int> repairChromosome(std::vector<int>& chrom) const;
 
+    // Dados do problema
     const std::vector<Attraction>& attractions_;
     const Parameters params_;
     Population population_;
