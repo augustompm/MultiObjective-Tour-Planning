@@ -26,13 +26,31 @@ double Transport::getDistance(const std::string& from, const std::string& to, Tr
         throw std::runtime_error("Transport matrices not loaded. Call loadTransportMatrices first.");
     }
     
-    auto from_it = TransportMatrices::attraction_indices.find(from);
-    auto to_it = TransportMatrices::attraction_indices.find(to);
+    // Trim input names to ensure consistent lookup
+    std::string from_trimmed = from;
+    std::string to_trimmed = to;
+    from_trimmed.erase(0, from_trimmed.find_first_not_of(" \t\r\n"));
+    from_trimmed.erase(from_trimmed.find_last_not_of(" \t\r\n") + 1);
+    to_trimmed.erase(0, to_trimmed.find_first_not_of(" \t\r\n"));
+    to_trimmed.erase(to_trimmed.find_last_not_of(" \t\r\n") + 1);
+    
+    auto from_it = TransportMatrices::attraction_indices.find(from_trimmed);
+    auto to_it = TransportMatrices::attraction_indices.find(to_trimmed);
     
     if (from_it == TransportMatrices::attraction_indices.end() || 
         to_it == TransportMatrices::attraction_indices.end()) {
-        throw std::runtime_error("Attraction not found in transport matrices: " + 
-                                (from_it == TransportMatrices::attraction_indices.end() ? from : to));
+        std::string error_msg = "Attraction not found in transport matrices:";
+        if (from_it == TransportMatrices::attraction_indices.end()) {
+            error_msg += " '" + from_trimmed + "'";
+        }
+        if (to_it == TransportMatrices::attraction_indices.end()) {
+            error_msg += " '" + to_trimmed + "'";
+        }
+        error_msg += "\nAvailable attractions:";
+        for (const auto& name : TransportMatrices::attraction_names) {
+            error_msg += " '" + name + "',";
+        }
+        throw std::runtime_error(error_msg);
     }
     
     size_t from_idx = from_it->second;
@@ -195,9 +213,9 @@ std::vector<Attraction> Parser::loadAttractions(const std::string& filename) {
 }
 
 bool Parser::loadTransportMatrices(const std::string& car_distances_file,
-                                 const std::string& walk_distances_file,
-                                 const std::string& car_times_file,
-                                 const std::string& walk_times_file) {
+                                   const std::string& walk_distances_file,
+                                   const std::string& car_times_file,
+                                   const std::string& walk_times_file) {
     try {
         TransportMatrices::car_distances = parseMatrixFile(car_distances_file);
         TransportMatrices::walk_distances = parseMatrixFile(walk_distances_file);
@@ -222,13 +240,55 @@ bool Parser::loadTransportMatrices(const std::string& car_distances_file,
         std::getline(file, header);
         auto attraction_names = split(header, ';');
         
+        // Debug: Print the raw header line
+        std::cerr << "Raw header line: '" << header << "'" << std::endl;
+        
+        // Debug: Print all parts after splitting
+        std::cerr << "Header parts after splitting:" << std::endl;
+        for (size_t i = 0; i < attraction_names.size(); ++i) {
+            std::cerr << i << ": '" << attraction_names[i] << "'" << std::endl;
+        }
+        
+        // Skip the first element only if it's empty (it's the corner cell of the matrix)
+        if (!attraction_names.empty() && attraction_names[0].empty()) {
+            attraction_names.erase(attraction_names.begin());
+        }
+        
+        // New: Remove UTF-8 BOM if present in the first attraction name
         if (!attraction_names.empty()) {
-            attraction_names.erase(attraction_names.begin()); // Remove primeira coluna vazia
+            const std::string BOM = "\xEF\xBB\xBF";
+            if (attraction_names[0].compare(0, BOM.size(), BOM) == 0) {
+                attraction_names[0].erase(0, BOM.size());
+            }
+        }
+        
+        // Debug output to help diagnose the issue
+        std::cerr << "Loaded attraction names from matrix file:" << std::endl;
+        for (const auto& name : attraction_names) {
+            std::cerr << "'" << name << "'" << std::endl;
         }
         
         TransportMatrices::attraction_names = attraction_names;
         for (size_t i = 0; i < attraction_names.size(); ++i) {
-            TransportMatrices::attraction_indices[attraction_names[i]] = i;
+            std::string name = attraction_names[i];
+            // Trim any leading/trailing whitespace
+            name.erase(0, name.find_first_not_of(" \t\r\n"));
+            name.erase(name.find_last_not_of(" \t\r\n") + 1);
+            TransportMatrices::attraction_indices[name] = i;
+            // Also add version without any spaces (for robustness)
+            std::string name_no_spaces = name;
+            name_no_spaces.erase(std::remove_if(name_no_spaces.begin(), name_no_spaces.end(), 
+                                       [](unsigned char c) { return std::isspace(c); }), 
+                       name_no_spaces.end());
+            if (name_no_spaces != name) {
+                TransportMatrices::attraction_indices[name_no_spaces] = i;
+            }
+        }
+        
+        // Debug: Print all mapped indices
+        std::cerr << "Mapped attraction indices:" << std::endl;
+        for (const auto& [name, idx] : TransportMatrices::attraction_indices) {
+            std::cerr << "'" << name << "' -> " << idx << std::endl;
         }
         
         TransportMatrices::matrices_loaded = true;

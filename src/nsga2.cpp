@@ -42,19 +42,37 @@ void NSGA2::Individual::evaluate(const NSGA2& algorithm) {
         return;
     }
     
-    double total_time = route.getTotalTime();
-    double time_penalty = 0.0;
-    
-    // Aplica penalidade se ultrapassar o limite diário
-    if (total_time > utils::Config::DAILY_TIME_LIMIT) {
-        time_penalty = (total_time - utils::Config::DAILY_TIME_LIMIT) * 10.0;
+    // Calcular o tempo real considerando apenas os tempos de visita
+    double visit_time_sum = 0.0;
+    for (const auto* attraction : route.getAttractions()) {
+        visit_time_sum += attraction->getVisitTime();
     }
     
-    objectives_ = {
-        route.getTotalCost(),
-        total_time + time_penalty,
-        -static_cast<double>(route.getNumAttractions())
-    };
+    // Calcular o tempo total de deslocamento
+    double travel_time_sum = 0.0;
+    const auto& segments = route.getSegments();
+    for (const auto& segment : segments) {
+        travel_time_sum += segment.getTravelTime();
+    }
+    
+    double total_time = visit_time_sum + travel_time_sum;
+    
+    // Verificar explicitamente se o tempo total excede o limite
+    if (total_time > utils::Config::DAILY_TIME_LIMIT) {
+        // Aumentar drasticamente a penalidade para garantir que essas soluções sejam dominadas
+        objectives_ = {
+            route.getTotalCost() * 2.0,  // Duplicar o custo como penalidade
+            total_time,                  // Manter o tempo real para avaliação
+            -static_cast<double>(route.getNumAttractions()) / 2.0  // Reduzir valor das atrações
+        };
+    } else {
+        // Solução válida - usar os valores reais
+        objectives_ = {
+            route.getTotalCost(),
+            total_time,
+            -static_cast<double>(route.getNumAttractions())
+        };
+    }
 }
 
 void NSGA2::Individual::determineTransportModes(const NSGA2& algorithm) {
@@ -121,26 +139,40 @@ Route NSGA2::Individual::constructRoute(const NSGA2& algorithm) const {
         return route;
     }
     
+    // Variáveis para rastrear o tempo atual
+    double current_time_spent = 0.0;
+    
     // Adiciona a primeira atração
-    route.addAttraction(algorithm.attractions_[valid_indices[0]]);
+    const auto& first_attraction = algorithm.attractions_[valid_indices[0]];
+    route.addAttraction(first_attraction);
+    current_time_spent += first_attraction.getVisitTime();
     
     // Adiciona as atrações subsequentes com seus modos de transporte
     for (size_t i = 1; i < valid_indices.size(); ++i) {
+        const auto& next_attraction = algorithm.attractions_[valid_indices[i]];
+        
         // Calcula o índice no vetor de modos de transporte
         size_t mode_idx = i - 1;
         utils::TransportMode mode = (mode_idx < transport_modes_.size()) ? 
                                    transport_modes_[mode_idx] : utils::TransportMode::CAR;
         
-        // Verifica se adicionar esta atração ainda mantém o tempo dentro do limite
-        Route temp_route = route;
-        temp_route.addAttraction(algorithm.attractions_[valid_indices[i]], mode);
-        double new_total_time = temp_route.getTotalTime();
+        // Calcula o tempo de deslocamento para a próxima atração
+        double travel_time = utils::Transport::getTravelTime(
+            algorithm.attractions_[valid_indices[i-1]].getName(),
+            next_attraction.getName(),
+            mode
+        );
         
-        // Adiciona a atração se a rota ainda for válida (ou se estivermos ignorando restrições)
-        if (new_total_time <= utils::Config::DAILY_TIME_LIMIT * 1.1) { // Tolerância de 10%
-            route.addAttraction(algorithm.attractions_[valid_indices[i]], mode);
+        // Verifica se temos tempo suficiente para ir até a próxima atração e visitá-la
+        double time_needed = travel_time + next_attraction.getVisitTime();
+        
+        if (current_time_spent + time_needed <= utils::Config::DAILY_TIME_LIMIT) {
+            route.addAttraction(next_attraction, mode);
+            current_time_spent += time_needed;
+        } else {
+            // Não temos tempo suficiente para esta atração, tenta a próxima
+            continue;
         }
-        // Caso contrário, ignora esta atração e tenta a próxima no cromossomo
     }
     
     return route;
@@ -493,26 +525,32 @@ std::vector<Solution> NSGA2::run() {
         logProgress(gen, population_);
     }
 
-    // Filtrar soluções válidas, mas com critérios mais flexíveis
+    // Filtrar soluções válidas, sem tolerância
     std::vector<Solution> solutions;
     auto final_front = fastNonDominatedSort(population_)[0];
     
-    // Adicionar soluções da primeira fronteira
+    // Adicionar soluções da primeira fronteira que são realmente viáveis
     for (const auto& ind : final_front) {
         Route route = ind->constructRoute(*this);
-        solutions.push_back(Solution(route));
+        
+        // Verificar explicitamente se a rota é viável em termos de tempo
+        double total_time = 0.0;
+        
+        // Soma dos tempos de visita
+        for (const auto* attraction : route.getAttractions()) {
+            total_time += attraction->getVisitTime();
+        }
+        
+        // Soma dos tempos de deslocamento
+        for (const auto& segment : route.getSegments()) {
+            total_time += segment.getTravelTime();
+        }
+        
+        // Adiciona apenas rotas viáveis
+        if (total_time <= utils::Config::DAILY_TIME_LIMIT) {
+            solutions.push_back(Solution(route));
+        }
     }
-    
-    // Filtrar soluções com tempo total muito acima do limite
-    solutions.erase(
-        std::remove_if(solutions.begin(), solutions.end(), 
-            [](const Solution& sol) {
-                double total_time = sol.getObjectives()[1];
-                // Aceita rotas que estão dentro ou ligeiramente acima do limite (10% de tolerância)
-                return total_time > utils::Config::DAILY_TIME_LIMIT * 1.1;
-            }), 
-        solutions.end()
-    );
     
     // Ordenar as soluções por número de atrações (descendente)
     std::sort(solutions.begin(), solutions.end(), 

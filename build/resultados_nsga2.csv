@@ -1,0 +1,101 @@
+Solucao;CustoTotal;TempoTotal;NumAtracoes;Sequencia;ModosTransporte
+1;494.81;851.00;5;Corcovado - Cristo Redentor|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Walk|Car|
+2;230.44;851.00;5;Praia do Arpoador|Praia de Ipanema|Parque Lage|Museu do Amanhã|AquaRio|;Car|Car|Car|Car|
+3;232.67;801.00;5;Museu do Amanhã|AquaRio|Parque Lage|Praia do Arpoador|Praia de Ipanema|;Car|Car|Car|Car|
+4;489.33;851.00;5;Corcovado - Cristo Redentor|Jardim Botanico|Parque Lage|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Car|Car|
+5;494.81;851.00;5;Corcovado - Cristo Redentor|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Walk|Car|
+6;230.44;851.00;5;Praia do Arpoador|Praia de Ipanema|Parque Lage|Museu do Amanhã|AquaRio|;Car|Car|Car|Car|
+7;489.33;851.00;5;Corcovado - Cristo Redentor|Jardim Botanico|Parque Lage|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Car|Car|
+8;494.81;851.00;5;Corcovado - Cristo Redentor|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Walk|Car|
+9;230.44;851.00;5;Praia do Arpoador|Praia de Ipanema|Parque Lage|Museu do Amanhã|AquaRio|;Car|Car|Car|Car|
+10;230.44;851.00;5;Praia do Arpoador|Praia de Ipanema|Parque Lage|Museu do Amanhã|AquaRio|;Car|Car|Car|Car|
+11;494.81;851.00;5;Corcovado - Cristo Redentor|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Walk|Car|
+12;494.81;851.00;5;Corcovado - Cristo Redentor|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|AquaRio|;Car|Car|Walk|Car|
+13;282.37;851.00;5;Museu do Amanhã|AquaRio|Jardim Botanico|Parque Lage|Centro Cultural Banco do Brasil|;Car|Car|Car|Car|
+14;217.36;851.00;5;Praia do Arpoador|Praia de Ipanema|Parque Lage|Jardim Botanico|AquaRio|;Car|Car|Car|Car|
+15;230.44;851.00;5;Praia do Arpoador|Praia de Ipanema|Parque Lage|Museu do Amanhã|AquaRio|;Car|Car|Car|Car|
+16;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+17;357.91;851.00;4;Jardim Botanico|Praia de Ipanema|Maracana|AquaRio|;Car|Car|Car|
+18;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+19;431.91;851.00;4;Praia do Arpoador|Parque Lage|Praia da Barra da Tijuca|Maracana|;Car|Car|Car|
+20;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+21;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+22;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+23;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+24;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+25;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+26;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+27;121.12;750.00;4;Praia de Ipanema|Praia do Arpoador|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+28;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+29;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+30;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+31;367.44;689.00;4;AquaRio|Jardim Botanico|Parque Lage|Maracana|;Car|Car|Car|
+32;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+33;624.53;656.00;4;Parque Lage|Corcovado - Cristo Redentor|AquaRio|Maracana|;Car|Car|Car|
+34;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+35;121.12;750.00;4;Praia de Ipanema|Praia do Arpoador|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+36;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+37;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+38;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+39;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+40;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+41;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+42;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+43;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+44;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+45;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+46;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+47;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+48;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+49;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+50;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+51;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+52;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+53;367.44;689.00;4;AquaRio|Jardim Botanico|Parque Lage|Maracana|;Car|Car|Car|
+54;649.85;658.00;4;AquaRio|Corcovado - Cristo Redentor|Parque Lage|Maracana|;Car|Car|Car|
+55;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+56;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+57;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+58;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+59;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+60;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+61;228.91;851.00;4;Praia do Arpoador|Praia de Ipanema|Parque Lage|Maracana|;Car|Car|Car|
+62;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+63;121.12;750.00;4;Praia de Ipanema|Praia do Arpoador|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+64;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+65;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+66;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+67;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+68;128.50;741.00;4;Jardim Botanico|Praia de Ipanema|Praia do Arpoador|Centro Cultural Banco do Brasil|;Car|Car|Car|
+69;649.85;658.00;4;AquaRio|Corcovado - Cristo Redentor|Parque Lage|Maracana|;Car|Car|Car|
+70;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+71;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+72;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+73;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+74;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+75;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+76;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+77;121.12;750.00;4;Praia de Ipanema|Praia do Arpoador|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+78;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+79;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+80;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+81;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+82;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+83;121.12;750.00;4;Praia de Ipanema|Praia do Arpoador|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+84;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+85;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+86;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+87;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+88;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+89;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+90;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+91;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+92;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+93;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+94;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+95;367.44;689.00;4;AquaRio|Jardim Botanico|Parque Lage|Maracana|;Car|Car|Car|
+96;369.33;851.00;4;Museu do Amanhã|AquaRio|Parque Lage|Maracana|;Car|Car|Car|
+97;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+98;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+99;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
+100;133.82;694.00;4;Praia de Ipanema|Parque Lage|Museu do Amanhã|Centro Cultural Banco do Brasil|;Car|Car|Walk|
