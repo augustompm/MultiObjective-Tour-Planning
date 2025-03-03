@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 
 namespace tourist {
 namespace utils {
@@ -111,6 +112,17 @@ TransportMode Transport::determinePreferredMode(const std::string& from, const s
 
 std::string Transport::getModeString(TransportMode mode) {
     return (mode == TransportMode::WALK) ? "Walk" : "Car";
+}
+
+std::string Transport::formatTime(double minutes) {
+    int total_minutes = static_cast<int>(minutes);
+    int hours = total_minutes / 60;
+    int mins = total_minutes % 60;
+    
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(2) << hours << ":"
+       << std::setfill('0') << std::setw(2) << mins;
+    return ss.str();
 }
 
 // Implementações da classe Metrics

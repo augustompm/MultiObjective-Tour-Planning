@@ -55,7 +55,7 @@ private:
     int closing_time_;      // em minutos desde meia-noite
 };
 
-// Nova classe para representar um segmento da rota
+// Classe para representar um segmento da rota
 class RouteSegment {
 public:
     RouteSegment(const Attraction* from, const Attraction* to, utils::TransportMode mode);
@@ -64,6 +64,12 @@ public:
     const Attraction* getFromAttraction() const { return from_; }
     const Attraction* getToAttraction() const { return to_; }
     utils::TransportMode getTransportMode() const { return mode_; }
+    
+    // Valores temporais adicionais (compatíveis com a nova implementação do NSGA-II)
+    void setStartTime(double start_time) { start_time_ = start_time; }
+    void setEndTime(double end_time) { end_time_ = end_time; }
+    double getStartTime() const { return start_time_; }
+    double getEndTime() const { return end_time_; }
     
     // Cálculos
     double getDistance() const;
@@ -77,10 +83,21 @@ private:
     const Attraction* from_;
     const Attraction* to_;
     utils::TransportMode mode_;
+    double start_time_{0.0};  // Hora de início do deslocamento
+    double end_time_{0.0};    // Hora de chegada ao destino
 };
 
 class Route {
 public:
+    // Estrutura auxiliar para armazenar informações temporais de cada atração
+    struct AttractionTimeInfo {
+        double arrival_time;      // Tempo de chegada à atração
+        double departure_time;    // Tempo de saída da atração
+        double wait_time;         // Tempo de espera até a abertura
+        
+        AttractionTimeInfo() : arrival_time(0.0), departure_time(0.0), wait_time(0.0) {}
+    };
+    
     // Constructores
     Route();
     explicit Route(const std::vector<const Attraction*>& attractions);
@@ -89,10 +106,15 @@ public:
     const std::vector<const Attraction*>& getAttractions() const { return attractions_; }
     const std::vector<utils::TransportMode>& getTransportModes() const { return transport_modes_; }
     const std::vector<RouteSegment> getSegments() const;
+    const std::vector<AttractionTimeInfo>& getTimeInfo() const { return time_info_; }
     
     // Operações
     void addAttraction(const Attraction& attraction, utils::TransportMode mode = utils::TransportMode::CAR);
-    void clear() { attractions_.clear(); transport_modes_.clear(); }
+    void clear() { 
+        attractions_.clear(); 
+        transport_modes_.clear();
+        time_info_.clear();
+    }
     size_t size() const { return attractions_.size(); }
     bool empty() const { return attractions_.empty(); }
     
@@ -100,6 +122,9 @@ public:
     double getTotalCost() const;   // Custo total incluindo transporte e atrações
     double getTotalTime() const;   // Tempo total incluindo visitas e deslocamentos
     int getNumAttractions() const { return static_cast<int>(attractions_.size()); }
+    
+    // Recálculo de informações temporais
+    void recalculateTimeInfo();
     
     // Validação
     bool isValid() const;
@@ -116,6 +141,7 @@ public:
 private:
     std::vector<const Attraction*> attractions_;
     std::vector<utils::TransportMode> transport_modes_;
+    std::vector<AttractionTimeInfo> time_info_;  // Informações temporais de cada atração
 
     bool checkTimeConstraints() const;
     bool checkMaxDailyTime() const;

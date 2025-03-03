@@ -1,5 +1,6 @@
 #include "nsga2.hpp"
 #include "utils.hpp"
+#include "route_visualizer.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -19,6 +20,7 @@ constexpr size_t DIST_PRECISION = 0;
 void printSolution(const Solution& solution, size_t index) {
     const auto& route = solution.getRoute();
     const auto& objectives = solution.getObjectives();
+    const auto& time_info = route.getTimeInfo();
     
     std::cout << "\n=== Solução #" << (index + 1) << " ===\n";
     std::cout << "Custo Total: R$ " << std::fixed << std::setprecision(COST_PRECISION) 
@@ -52,6 +54,13 @@ void printSolution(const Solution& solution, size_t index) {
               << std::setfill('0') << std::setw(2) << open_min << " - "
               << std::setfill('0') << std::setw(2) << close_hour << ":" 
               << std::setfill('0') << std::setw(2) << close_min << "\n";
+    
+    // Início do dia às 9:00
+    double day_start_time = 9 * 60;
+    
+    // Linha do tempo completa do roteiro
+    std::cout << "\nLinha do Tempo do Roteiro:\n";
+    std::cout << utils::Transport::formatTime(day_start_time) << " - Início do dia\n";
     
     // Atrações subsequentes com informações de transporte
     for (size_t i = 1; i < attractions.size(); ++i) {
@@ -88,7 +97,13 @@ void printSolution(const Solution& solution, size_t index) {
                   << std::setfill('0') << std::setw(2) << open_min << " - "
                   << std::setfill('0') << std::setw(2) << close_hour << ":" 
                   << std::setfill('0') << std::setw(2) << close_min << "\n";
+        
+        if (i < time_info.size() && time_info[i].wait_time > 0) {
+            std::cout << "   - Tempo de espera: " << time_info[i].wait_time << " minutos\n";
+        }
     }
+    
+    std::cout << utils::Transport::formatTime(day_start_time + route.getTotalTime()) << " - Fim do dia\n";
 }
 
 void exportResults(const std::vector<Solution>& solutions, const std::string& filename) {
@@ -97,7 +112,7 @@ void exportResults(const std::vector<Solution>& solutions, const std::string& fi
         throw std::runtime_error("Erro ao criar arquivo: " + filename);
     }
 
-    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;Sequencia;ModosTransporte\n";
+    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;HoraInicio;HoraFim;Sequencia;TemposChegada;TemposPartida;ModosTransporte\n";
     
     for (size_t i = 0; i < solutions.size(); ++i) {
         const auto& solution = solutions[i];
@@ -105,16 +120,34 @@ void exportResults(const std::vector<Solution>& solutions, const std::string& fi
         const auto& route = solution.getRoute();
         const auto& attractions = route.getAttractions();
         const auto& modes = route.getTransportModes();
+        const auto& time_info = route.getTimeInfo();
+        
+        double start_time = 9 * 60; 
+        double end_time = start_time + route.getTotalTime();
         
         file << std::fixed << std::setprecision(COST_PRECISION);
         file << (i + 1) << ";";
         file << objectives[0] << ";";
         file << objectives[1] << ";";
         file << std::abs(static_cast<int>(objectives[2])) << ";";
+        file << utils::Transport::formatTime(start_time) << ";";
+        file << utils::Transport::formatTime(end_time) << ";";
         
         // Sequência de atrações
         for (const auto* attraction : attractions) {
             file << attraction->getName() << "|";
+        }
+        file << ";";
+        
+        // Tempos de chegada
+        for (size_t j = 0; j < time_info.size(); ++j) {
+            file << utils::Transport::formatTime(time_info[j].arrival_time) << "|";
+        }
+        file << ";";
+        
+        // Tempos de partida
+        for (size_t j = 0; j < time_info.size(); ++j) {
+            file << utils::Transport::formatTime(time_info[j].departure_time) << "|";
         }
         file << ";";
         
@@ -127,6 +160,8 @@ void exportResults(const std::vector<Solution>& solutions, const std::string& fi
 }
 
 int main() {
+    std::vector<Solution> solutions; // Define outside the try block
+
     try {
         std::cout << "\n=== Planejador de Rotas Turísticas Multiobjetivo ===\n\n";
         std::cout << "Carregando dados...\n";
@@ -193,7 +228,7 @@ int main() {
         const auto start_time = std::chrono::high_resolution_clock::now();
         
         try {
-            const auto solutions = nsga2.run();
+            solutions = nsga2.run(); // Assign inside the try block
             std::cout << "Otimização concluída com sucesso. Soluções encontradas: "
                       << solutions.size() << "\n";
             
@@ -238,5 +273,12 @@ int main() {
         return 1;
     }
     
+    std::cout << "\nGerando visualizações HTML...\n";
+    try {
+        RouteVisualizer::saveAllTimelineHTML(solutions, "html_routes");
+        std::cout << "Visualizações salvas no diretório 'html_routes'\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Erro ao gerar visualizações: " << e.what() << "\n";
+    }
     return 0;
 }

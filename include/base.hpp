@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <cmath> // Adicione esta linha para resolver o erro de std::abs
 
 namespace tourist {
 
@@ -19,6 +20,24 @@ public:
     
     // Check if this solution dominates another solution (in Pareto sense)
     virtual bool dominates(const SolutionBase& other) const = 0;
+
+    // Utility method to compare solution objectives with tolerance
+    bool isSimilarTo(const SolutionBase& other, double tolerance = 1e-6) const {
+        const auto& self_objectives = getObjectives();
+        const auto& other_objectives = other.getObjectives();
+        
+        if (self_objectives.size() != other_objectives.size()) {
+            return false;
+        }
+        
+        for (size_t i = 0; i < self_objectives.size(); ++i) {
+            if (std::abs(self_objectives[i] - other_objectives[i]) > tolerance) {
+                return false;
+            }
+        }
+        
+        return true;
+    }    
     
     // Utility method to check if this solution is dominated by a set of objective values
     bool isDominatedBy(const std::vector<double>& other_objectives) const {

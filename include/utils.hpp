@@ -35,6 +35,7 @@ struct Config {
     static constexpr double COST_CAR_PER_KM = 6.0;     // R$6 por km
     static constexpr int DAILY_TIME_LIMIT = 840;       // 14 horas em minutos
     static constexpr int WALK_TIME_PREFERENCE = 15;    // preferência por caminhada abaixo de 15 min
+    static constexpr double TIME_TOLERANCE = 0.05;     // 5% de tolerância no tempo (para penalização)
 
     struct WeightConfig {
         double total_cost;
@@ -64,6 +65,9 @@ public:
     
     // Converte o modo de transporte para string para exibição
     static std::string getModeString(TransportMode mode);
+    
+    // Formata um tempo em minutos para hora e minuto (formato HH:MM)
+    static std::string formatTime(double minutes);
 };
 
 // Métricas de avaliação

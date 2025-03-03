@@ -1,3 +1,5 @@
+// File: include/nsga2.hpp
+
 #pragma once
 
 #include "base.hpp"
@@ -6,7 +8,12 @@
 #include <memory>
 #include <random>
 #include <set>
-#include <stdexcept>
+#include <string>
+#include <cstddef>
+#include <utility>
+#include <functional>
+#include <algorithm>
+#include <limits>
 
 namespace tourist {
 
@@ -39,28 +46,72 @@ public:
     };
 
 protected:
-    class Individual final {
+    class Individual {
     public:
-        explicit Individual(std::vector<int> chromosome);
-        explicit Individual(std::vector<int> chromosome, std::vector<utils::TransportMode> transport_modes);
+        struct AttractionGene {
+            int attraction_index;
+            double arrival_time;      // Hora de chegada na atração (em minutos desde o início do dia)
+            double departure_time;    // Hora de saída da atração
+            double visit_duration;    // Duração da visita
+            
+            AttractionGene(int idx = -1);
+        };
+        
+        struct TransportGene {
+            utils::TransportMode mode;
+            double start_time;       // Hora de início do deslocamento
+            double end_time;         // Hora de chegada ao destino
+            double duration;         // Duração do deslocamento
+            double cost;             // Custo do deslocamento
+            double distance;         // Distância percorrida
+            
+            TransportGene(utils::TransportMode m = utils::TransportMode::CAR);
+        };
+        
+        // Construtor que recebe uma sequência de genes de atração e transporte
+        Individual(std::vector<AttractionGene> attraction_genes, std::vector<TransportGene> transport_genes);
+        // Construtor que recebe apenas índices de atrações e calcula os detalhes internamente
+        explicit Individual(std::vector<int> attraction_indices);
+        
         void evaluate(const NSGA2& algorithm);
         bool dominates(const Individual& other) const;
         Route constructRoute(const NSGA2& algorithm) const;
-
+        
         int getRank() const { return rank_; }
         double getCrowdingDistance() const { return crowding_distance_; }
         const std::vector<double>& getObjectives() const { return objectives_; }
+        
         void setRank(int rank) { rank_ = rank; }
         void setCrowdingDistance(double distance) { crowding_distance_ = distance; }
+        
+        // Métodos auxiliares para trabalhar com a nova representação
+        double getTotalTime() const { return total_time_; }
+        double getTotalCost() const { return total_cost_; }
+        int getNumAttractions() const { return static_cast<int>(attraction_genes_.size()); }
+        
+        // Add a pointer to the NSGA2 objective ranges for normalization.
+        const std::vector<std::pair<double, double>>* objective_ranges_ptr = nullptr;
+        
+        // Reference to the objective ranges for normalization in dominates()
+        void setObjectiveRanges(const std::vector<std::pair<double, double>>& ranges) {
+            objective_ranges_ptr = &ranges;
+        }
 
     private:
-        std::vector<int> chromosome_;                        // Índices das atrações a visitar
-        std::vector<utils::TransportMode> transport_modes_;  // Modo de transporte entre atrações adjacentes
-        std::vector<double> objectives_;                     // Valores dos objetivos [custo, tempo, -atrações]
-        int rank_{0};                                       // Rank na fronteira de Pareto
-        double crowding_distance_{0.0};                     // Distância de crowding para preservar diversidade
-
-        // Escolhe o modo de transporte ideal para cada trecho da rota
+        std::vector<AttractionGene> attraction_genes_;    // Genes de atrações
+        std::vector<TransportGene> transport_genes_;      // Genes de transporte entre atrações
+        std::vector<double> objectives_;                 // Valores dos objetivos [custo, tempo, -atrações]
+        int rank_{0};                                   // Rank na fronteira de Pareto
+        double crowding_distance_{0.0};                 // Distância de crowding para preservar diversidade
+        
+        // Atributos agregados para controle rápido
+        double total_time_{0.0};                        // Tempo total da rota
+        double total_cost_{0.0};                        // Custo total da rota
+        bool is_valid_{false};                         // Flag indicando se a rota é válida
+        
+        // Método para calcular todos os tempos e custos ao longo da rota
+        void calculateTimeAndCosts(const NSGA2& algorithm);
+        // Método para determinar os modos de transporte ideais, se não especificados
         void determineTransportModes(const NSGA2& algorithm);
         
         friend class NSGA2;
@@ -110,6 +161,12 @@ private:
     const Parameters params_;
     Population population_;
     mutable std::mt19937 rng_{std::random_device{}()};
+
+    // Range (min, max) for each objective, used for normalization
+    std::vector<std::pair<double, double>> objective_ranges_;
+    
+    // Function to calculate objective ranges from a population
+    void updateObjectiveRanges(const Population& pop);
 };
 
 } // namespace tourist
