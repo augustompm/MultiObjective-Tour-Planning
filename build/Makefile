@@ -142,6 +142,30 @@ tourist_route/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_route.dir/build.make CMakeFiles/tourist_route.dir/build
 .PHONY : tourist_route/fast
 
+src/hypervolume.o: src/hypervolume.cpp.o
+.PHONY : src/hypervolume.o
+
+# target to build an object file
+src/hypervolume.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/hypervolume.cpp.o
+.PHONY : src/hypervolume.cpp.o
+
+src/hypervolume.i: src/hypervolume.cpp.i
+.PHONY : src/hypervolume.i
+
+# target to preprocess a source file
+src/hypervolume.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/hypervolume.cpp.i
+.PHONY : src/hypervolume.cpp.i
+
+src/hypervolume.s: src/hypervolume.cpp.s
+.PHONY : src/hypervolume.s
+
+# target to generate assembly for a file
+src/hypervolume.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/hypervolume.cpp.s
+.PHONY : src/hypervolume.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -248,6 +272,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... tourist_lib"
 	@echo "... tourist_route"
+	@echo "... src/hypervolume.o"
+	@echo "... src/hypervolume.i"
+	@echo "... src/hypervolume.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

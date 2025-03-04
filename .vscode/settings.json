@@ -64,6 +64,7 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "format": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "unordered_set": "cpp"
     }
 }

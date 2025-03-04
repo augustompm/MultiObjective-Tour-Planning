@@ -73,8 +73,8 @@ public:
 // Métricas de avaliação
 class Metrics {
 public:
-    // Calcula o hipervolume de um conjunto de soluções
-    static double calculateHypervolume(const std::vector<Solution>& solutions, 
+    // Calcula o hipervolume para um conjunto de soluções
+    static double calculateHypervolume(const std::vector<Solution>& solutions,
                                      const std::vector<double>& reference_point);
     
     // Calcula o spread (diversidade) das soluções

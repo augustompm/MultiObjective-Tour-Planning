@@ -21,6 +21,7 @@ set(SOURCES
     src/models.cpp
     src/utils.cpp
     src/nsga2.cpp
+    src/hypervolume.cpp
 )
 
 # Cria biblioteca estática

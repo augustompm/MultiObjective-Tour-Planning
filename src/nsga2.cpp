@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <random>
 #include <unordered_set>
+#include "hypervolume.hpp"  // New include for hypervolume metrics
 
 namespace tourist {
 
@@ -224,15 +225,19 @@ void NSGA2::Individual::determineTransportModes(const NSGA2& algorithm) {
                 const std::string& from = algorithm.attractions_[from_idx].getName();
                 const std::string& to = algorithm.attractions_[to_idx].getName();
                 
-                // Determinar o tempo de caminhada
-                double walking_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
+                // Usar a função determinePreferredMode diretamente
+                transport_genes_[i].mode = utils::Transport::determinePreferredMode(from, to);
                 
-                // Se o tempo de caminhada for inferior a 15 minutos, prefira caminhar, caso contrário, usar carro
-                transport_genes_[i].mode = (walking_time <= utils::Config::WALK_TIME_PREFERENCE) 
-                                        ? utils::TransportMode::WALK : utils::TransportMode::CAR;
+                // Adicionar log para depuração
+                double walking_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
+                std::cout << "From " << from << " to " << to << ", walking time: " 
+                          << walking_time << " min, chosen mode: " 
+                          << (transport_genes_[i].mode == utils::TransportMode::WALK ? "WALK" : "CAR") 
+                          << std::endl;
             } catch (const std::exception& e) {
                 // Tratamento de erro: usar modo padrão
                 transport_genes_[i].mode = utils::TransportMode::CAR;
+                std::cerr << "Error determining transport mode: " << e.what() << std::endl;
             }
         } else {
             // Em caso de índices inválidos, usa modo padrão
@@ -761,19 +766,33 @@ void NSGA2::mutateTransportModes(IndividualPtr individual) {
     std::uniform_real_distribution<> prob_dist(0.0, 1.0);
     std::uniform_int_distribution<size_t> pos_dist(0, individual->transport_genes_.size() - 1);
     
-    // 30% de chance de mutar pelo menos um modo de transporte
+    // 30% chance to mutate at least one transport mode
     if (prob_dist(rng_) < 0.3) {
         size_t pos = pos_dist(rng_);
         
-        // Inverter o modo (de CAR para WALK ou vice-versa)
-        if (individual->transport_genes_[pos].mode == utils::TransportMode::CAR) {
-            individual->transport_genes_[pos].mode = utils::TransportMode::WALK;
-        } else {
-            individual->transport_genes_[pos].mode = utils::TransportMode::CAR;
+        // Ensure valid indices
+        if (pos < individual->attraction_genes_.size() - 1 && 
+            individual->attraction_genes_[pos].attraction_index >= 0 && 
+            individual->attraction_genes_[pos + 1].attraction_index >= 0) {
+            
+            const std::string& from = attractions_[individual->attraction_genes_[pos].attraction_index].getName();
+            const std::string& to = attractions_[individual->attraction_genes_[pos + 1].attraction_index].getName();
+            
+            // Get walking travel time
+            double walk_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
+            
+            // Only switch to WALK if time is below the preference
+            if (individual->transport_genes_[pos].mode == utils::TransportMode::CAR &&
+                walk_time < utils::Config::WALK_TIME_PREFERENCE) {
+                individual->transport_genes_[pos].mode = utils::TransportMode::WALK;
+            } else {
+                // Otherwise, always use CAR
+                individual->transport_genes_[pos].mode = utils::TransportMode::CAR;
+            }
+            
+            // Recalculate costs and times
+            individual->calculateTimeAndCosts(*this);
         }
-        
-        // Recalcular custos e tempos
-        individual->calculateTimeAndCosts(*this);
     }
 }
 
@@ -945,30 +964,34 @@ void NSGA2::logProgress(size_t generation, const Population& pop) const {
 double NSGA2::calculateHypervolume(const Population& pop) const {
     auto fronts = fastNonDominatedSort(pop);
     if (fronts.empty()) return 0.0;
-
+    
     auto& front = fronts[0];
     std::vector<Solution> solutions;
     solutions.reserve(front.size());
-
-    // Usar tolerância maior para hypervolume apenas para medir progresso
+    
     for (const auto& ind : front) {
-        // Aceitar soluções com tolerância maior para medir o progresso
-        if (ind->getTotalTime() <= utils::Config::DAILY_TIME_LIMIT * 1.2) {
-            Route route = ind->constructRoute(*this);
-            if (!route.getAttractions().empty()) {
-                solutions.push_back(Solution(route));
-            }
+        Route route = ind->constructRoute(*this);
+        if (ind->getTotalTime() <= utils::Config::DAILY_TIME_LIMIT * 1.1) { // Tolerância de 10%
+            solutions.push_back(Solution(route));
         }
     }
-
-    // Handle empty solutions vector
+    
     if (solutions.empty()) {
+        std::cout << "Warning: No valid solutions for hypervolume calculation" << std::endl;
         return 0.0;
     }
-
-    // Definir ponto de referência adequado
-    std::vector<double> reference_point = {10000.0, utils::Config::DAILY_TIME_LIMIT * 2.0, 0.0};
-    return utils::Metrics::calculateHypervolume(solutions, reference_point);
+    
+    // Make sure the reference point is appropriate
+    // For minimization objectives (cost and time), use high values
+    // For maximization objectives (attractions), use low values
+    std::vector<double> reference_point = {10000.0, utils::Config::DAILY_TIME_LIMIT * 2, 0.0};
+    
+    // Print debug info
+    std::cout << "Calculating hypervolume with " << solutions.size() << " solutions" << std::endl;
+    std::cout << "Reference point: [" << reference_point[0] << ", " 
+              << reference_point[1] << ", " << reference_point[2] << "]" << std::endl;
+    
+              return utils::Metrics::calculateHypervolume(solutions, reference_point);
 }
 
 bool NSGA2::compareByRankAndCrowding(const IndividualPtr& a, const IndividualPtr& b) {

@@ -1,5 +1,6 @@
 #include "utils.hpp"
-#include "models.hpp"  // Add this include to get full definition of Solution and Attraction
+#include "models.hpp"  
+#include "hypervolume.hpp"  
 #include <fstream>
 #include <sstream>
 #include <cmath>
@@ -125,23 +126,10 @@ std::string Transport::formatTime(double minutes) {
     return ss.str();
 }
 
-// Implementações da classe Metrics
-double Metrics::calculateHypervolume(const std::vector<Solution>& solutions,
+// Implementação transferida de metrics.cpp
+double Metrics::calculateHypervolume(const std::vector<Solution>& solutions, 
                                    const std::vector<double>& reference_point) {
-    if (solutions.empty()) return 0.0;
-    
-    double volume = 1.0;
-    size_t num_objectives = solutions[0].getObjectives().size();
-    
-    for (size_t i = 0; i < num_objectives; ++i) {
-        double min_val = reference_point[i];
-        for (const auto& sol : solutions) {
-            min_val = std::min(min_val, sol.getObjectives()[i]);
-        }
-        volume *= (reference_point[i] - min_val);
-    }
-    
-    return volume;
+    return HypervolumeCalculator::calculate(solutions, reference_point);
 }
 
 double Metrics::calculateSpread(const std::vector<Solution>& solutions) {
