@@ -167,6 +167,12 @@ private:
     
     // Function to calculate objective ranges from a population
     void updateObjectiveRanges(const Population& pop);
+    
+    // Ponto de referência fixo para cálculo de hipervolume consistente
+    static const std::vector<double> TRACKING_REFERENCE_POINT;
+    
+    // Inicializa o ponto de referência com base nos dados das atrações
+    void initializeReferencePoint();
 };
 
 } // namespace tourist

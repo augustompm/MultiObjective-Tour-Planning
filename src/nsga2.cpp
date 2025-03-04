@@ -356,6 +356,37 @@ NSGA2::NSGA2(const std::vector<Attraction>& attractions, Parameters params)
     }
 }
 
+const std::vector<double> NSGA2::TRACKING_REFERENCE_POINT = {
+    0.0,  // Will be computed as sum of top 10 attraction costs
+    utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TIME_TOLERANCE),  // daily limit + tau
+    -1.0  // Minimum of 1 attraction, represented as -1.0
+};
+
+void NSGA2::initializeReferencePoint() {
+    // Gather all attraction costs
+    std::vector<double> attraction_costs;
+    attraction_costs.reserve(attractions_.size());
+    for (const auto& attraction : attractions_) {
+        attraction_costs.push_back(attraction.getCost());
+    }
+
+    // Sort descending to get highest costs
+    std::sort(attraction_costs.begin(), attraction_costs.end(), std::greater<double>());
+
+    double top10_cost_sum = 0.0;
+    for (size_t i = 0; i < std::min(size_t(10), attraction_costs.size()); i++) {
+        top10_cost_sum += attraction_costs[i];
+    }
+    top10_cost_sum += 500.0;  // Conservative transport cost
+
+    auto& ref_point = const_cast<std::vector<double>&>(TRACKING_REFERENCE_POINT);
+    ref_point[0] = top10_cost_sum;
+
+    std::cout << "Reference point initialized: [" << ref_point[0] << ", "
+              << ref_point[1] << ", " << ref_point[2] << "]" << std::endl;
+    std::cout << "Using time tolerance (tau): " << utils::Config::TIME_TOLERANCE * 100 << "%" << std::endl;
+}
+
 void NSGA2::initializePopulation() {
     population_.clear();
     population_.reserve(params_.population_size);
@@ -843,6 +874,7 @@ NSGA2::Population NSGA2::selectNextGeneration(const Population& parents, const P
 }
 
 std::vector<Solution> NSGA2::run() {
+    initializeReferencePoint();
     initializePopulation();
     
     // Rastrear melhor hipervolume durante a execução
@@ -971,6 +1003,7 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
     
     for (const auto& ind : front) {
         Route route = ind->constructRoute(*this);
+        // ...existing code...
         if (ind->getTotalTime() <= utils::Config::DAILY_TIME_LIMIT * 1.1) { // Tolerância de 10%
             solutions.push_back(Solution(route));
         }
@@ -981,17 +1014,86 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
         return 0.0;
     }
     
-    // Make sure the reference point is appropriate
-    // For minimization objectives (cost and time), use high values
-    // For maximization objectives (attractions), use low values
-    std::vector<double> reference_point = {10000.0, utils::Config::DAILY_TIME_LIMIT * 2, 0.0};
-    
-    // Print debug info
+    std::vector<double> reference_point = TRACKING_REFERENCE_POINT;
     std::cout << "Calculating hypervolume with " << solutions.size() << " solutions" << std::endl;
-    std::cout << "Reference point: [" << reference_point[0] << ", " 
+    std::cout << "Reference point: [" << reference_point[0] << ", "
               << reference_point[1] << ", " << reference_point[2] << "]" << std::endl;
     
-              return utils::Metrics::calculateHypervolume(solutions, reference_point);
+    std::vector<double> min_values = {
+        std::numeric_limits<double>::max(),
+        std::numeric_limits<double>::max(),
+        std::numeric_limits<double>::max()
+    };
+    std::vector<double> max_values = {
+        std::numeric_limits<double>::lowest(),
+        std::numeric_limits<double>::lowest(),
+        std::numeric_limits<double>::lowest()
+    };
+    
+    for (const auto& sol : solutions) {
+        const auto& obj = sol.getObjectives();
+        for (size_t i = 0; i < obj.size() && i < 3; i++) {
+            min_values[i] = std::min(min_values[i], obj[i]);
+            max_values[i] = std::max(max_values[i], obj[i]);
+        }
+    }
+    
+    for (size_t i = 0; i < reference_point.size() && i < 3; i++) {
+        min_values[i] = std::min(min_values[i], reference_point[i]);
+        max_values[i] = std::max(max_values[i], reference_point[i]);
+    }
+    
+    bool can_normalize = true;
+    for (size_t i = 0; i < max_values.size() && i < min_values.size(); i++) {
+        if (std::abs(max_values[i] - min_values[i]) < 1e-10) {
+            can_normalize = false;
+            break;
+        }
+    }
+    
+    if (can_normalize) {
+        class NormalizedSolution : public Solution {
+        public:
+            NormalizedSolution(const Solution& orig,
+                               const std::vector<double>& min_vals,
+                               const std::vector<double>& max_vals)
+                : Solution(orig.getRoute()), original_objectives_(orig.getObjectives()) {
+                std::vector<double> norm_obj(original_objectives_.size());
+                for (size_t i = 0; i < original_objectives_.size(); i++) {
+                    double range = max_vals[i] - min_vals[i];
+                    if (i == 2) {
+                        norm_obj[i] = (original_objectives_[i] - min_vals[i]) / range;
+                    } else {
+                        norm_obj[i] = (original_objectives_[i] - min_vals[i]) / range;
+                    }
+                }
+                normalized_objectives_ = norm_obj;
+            }
+            
+            std::vector<double> getObjectives() const override {
+                return normalized_objectives_;
+            }
+            
+        private:
+            std::vector<double> original_objectives_;
+            std::vector<double> normalized_objectives_;
+        };
+        
+        std::vector<Solution> normalized_solutions;
+        normalized_solutions.reserve(solutions.size());
+        for (const auto& sol : solutions) {
+            normalized_solutions.push_back(NormalizedSolution(sol, min_values, max_values));
+        }
+        
+        std::vector<double> norm_reference = {1.0, 1.0, 1.0};
+        double hypervolume = utils::Metrics::calculateHypervolume(normalized_solutions, norm_reference);
+        std::cout << "Normalized hypervolume: " << hypervolume << std::endl;
+        return hypervolume;
+    } else {
+        double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
+        std::cout << "Unnormalized hypervolume: " << hypervolume << std::endl;
+        return hypervolume;
+    }
 }
 
 bool NSGA2::compareByRankAndCrowding(const IndividualPtr& a, const IndividualPtr& b) {
@@ -1008,14 +1110,13 @@ bool NSGA2::isValidChromosome(const std::vector<int>& chrom) const {
         if (used[idx]) return false;
         used[idx] = true;
     }
-
     return true;
 }
 
 std::vector<int> NSGA2::repairChromosome(std::vector<int>& chrom) const {
     std::vector<int> result;
     std::vector<bool> used(attractions_.size(), false);
-
+    
     // Mantém os genes válidos
     for (int idx : chrom) {
         if (idx >= 0 && static_cast<size_t>(idx) < attractions_.size() && !used[idx]) {
@@ -1023,13 +1124,13 @@ std::vector<int> NSGA2::repairChromosome(std::vector<int>& chrom) const {
             used[idx] = true;
         }
     }
-
+    
     // Se o cromossomo estiver vazio após reparos, adicionar pelo menos uma atração aleatória
     if (result.empty() && !attractions_.empty()) {
         std::uniform_int_distribution<size_t> dist(0, attractions_.size() - 1);
         result.push_back(dist(rng_));
     }
-
+    
     return result;
 }
 
