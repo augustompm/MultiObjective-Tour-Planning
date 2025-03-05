@@ -1,6 +1,5 @@
 #include "nsga2.hpp"
 #include "utils.hpp"
-#include "route_visualizer.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -244,7 +243,11 @@ int main() {
                 return 0;
             }
             
-            std::vector<double> reference_point = {10000.0, utils::Config::DAILY_TIME_LIMIT * 1.5, 0.0};
+            double cost_ref = utils::Config::TOLERANCE > 0 
+                ? 10000.0 * (1.0 + utils::Config::TOLERANCE) 
+                : 10000.0;
+            double time_ref = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
+            std::vector<double> reference_point = {cost_ref, time_ref, 0.0};
             const double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
             const double spread = utils::Metrics::calculateSpread(solutions);
             
@@ -273,12 +276,5 @@ int main() {
         return 1;
     }
     
-    std::cout << "\nGerando visualizações HTML...\n";
-    try {
-        RouteVisualizer::saveAllTimelineHTML(solutions, "html_routes");
-        std::cout << "Visualizações salvas no diretório 'html_routes'\n";
-    } catch (const std::exception& e) {
-        std::cerr << "Erro ao gerar visualizações: " << e.what() << "\n";
-    }
     return 0;
 }

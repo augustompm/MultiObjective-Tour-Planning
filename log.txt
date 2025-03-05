@@ -1,0 +1,60 @@
+[1;33mLimpando build anterior...[0m
+[1;33mEntrando no diretório build...[0m
+[1;33mExecutando CMake...[0m
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Build type: 
+-- C++ Compiler: GNU 13.3.0
+-- Configuring done (4.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/augusto/projects/MultiObjective-Tour-Planning/build
+[1;33mCompilando o projeto...[0m
+[ 14%] Building CXX object CMakeFiles/tourist_lib.dir/src/models.cpp.o
+[ 28%] Building CXX object CMakeFiles/tourist_lib.dir/src/utils.cpp.o
+[ 42%] Building CXX object CMakeFiles/tourist_lib.dir/src/nsga2.cpp.o
+[ 57%] Building CXX object CMakeFiles/tourist_lib.dir/src/hypervolume.cpp.o
+[ 71%] Linking CXX static library libtourist_lib.a
+[ 71%] Built target tourist_lib
+[ 85%] Building CXX object CMakeFiles/tourist_route.dir/src/main.cpp.o
+[100%] Linking CXX executable bin/tourist_route
+[100%] Built target tourist_route
+[0;32mBuild concluído com sucesso![0m
+[1;33mExecutando o programa...[0m
+
+=== Planejador de Rotas Turísticas Multiobjetivo ===
+
+Carregando dados...
+Carregando matrizes de distância e tempo...
+Matrizes carregadas com sucesso.
+Atrações carregadas: 10
+Verificando compatibilidade de atrações com as matrizes...
+AVISO: Atração 'Museu do Amanhã' não encontrada nas matrizes de transporte.
+
+Configurando NSGA-II...
+Validando parâmetros...
+=== Configuração da Otimização ===
+Tamanho da população: 100
+Número de gerações: 100
+Taxa de crossover: 0.9
+Taxa de mutação: 0.1
+Limite de tempo diário: 840 minutos
+Preferência por caminhada: < 20 minutos
+Custo de carro: R$ 6 por km
+
+Inicializando NSGA-II...
+NSGA-II inicializado com sucesso
+Iniciando otimização...
+Reference point initialized: [1075.29, 924, -1]
+Using tolerance factor: 10%
+Generation 0: Front size = 7, Hypervolume = 0
+Generation 1: Front size = 9, Hypervolume = 179

@@ -75,11 +75,12 @@ void NSGA2::Individual::evaluate(const NSGA2& algorithm) {
     // Abordagem de penalidade mais gradual para restrições de tempo
     double time_penalty = 0.0;
     
-    if (total_time_ > utils::Config::DAILY_TIME_LIMIT) {
+    double max_time = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
+    if (total_time_ > max_time) {
         // Calcular violação
-        double violation = total_time_ - utils::Config::DAILY_TIME_LIMIT;
+        double violation = total_time_ - max_time;
         // Aplicar penalidade proporcional à violação
-        time_penalty = violation * (1.0 + violation / utils::Config::DAILY_TIME_LIMIT);
+        time_penalty = violation * (1.0 + violation / max_time);
     }
     
     // Definir objetivos com penalidades mais equilibradas
@@ -201,7 +202,7 @@ void NSGA2::Individual::calculateTimeAndCosts(const NSGA2& algorithm) {
     }
     
     // Verificar se o tempo total está dentro do limite com tolerância de 20%
-    double max_time_with_tolerance = utils::Config::DAILY_TIME_LIMIT * 1.2;
+    double max_time_with_tolerance = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
     is_valid_ = (total_time_ <= max_time_with_tolerance);
 }
 
@@ -229,11 +230,11 @@ void NSGA2::Individual::determineTransportModes(const NSGA2& algorithm) {
                 transport_genes_[i].mode = utils::Transport::determinePreferredMode(from, to);
                 
                 // Adicionar log para depuração
-                double walking_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
-                std::cout << "From " << from << " to " << to << ", walking time: " 
-                          << walking_time << " min, chosen mode: " 
-                          << (transport_genes_[i].mode == utils::TransportMode::WALK ? "WALK" : "CAR") 
-                          << std::endl;
+                // double walking_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
+                // std::cout << "From " << from << " to " << to << ", walking time: " 
+                //           << walking_time << " min, chosen mode: " 
+                //           << (transport_genes_[i].mode == utils::TransportMode::WALK ? "WALK" : "CAR") 
+                //           << std::endl;
             } catch (const std::exception& e) {
                 // Tratamento de erro: usar modo padrão
                 transport_genes_[i].mode = utils::TransportMode::CAR;
@@ -310,7 +311,8 @@ Route NSGA2::Individual::constructRoute(const NSGA2& algorithm) const {
     
     // Verificar se o indivíduo é válido com uma tolerância maior
     // para permitir algumas violações menores na geração de soluções
-    if (attraction_genes_.empty() || total_time_ > utils::Config::DAILY_TIME_LIMIT * 1.3) {
+    double max_allowed_time = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE * 1.3);
+    if (attraction_genes_.empty() || total_time_ > max_allowed_time) {
         return route;
     }
     
@@ -357,9 +359,9 @@ NSGA2::NSGA2(const std::vector<Attraction>& attractions, Parameters params)
 }
 
 const std::vector<double> NSGA2::TRACKING_REFERENCE_POINT = {
-    0.0,  // Will be computed as sum of top 10 attraction costs
-    utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TIME_TOLERANCE),  // daily limit + tau
-    -1.0  // Minimum of 1 attraction, represented as -1.0
+    0.0,
+    utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE),
+    -1.0
 };
 
 void NSGA2::initializeReferencePoint() {
@@ -377,14 +379,16 @@ void NSGA2::initializeReferencePoint() {
     for (size_t i = 0; i < std::min(size_t(10), attraction_costs.size()); i++) {
         top10_cost_sum += attraction_costs[i];
     }
-    top10_cost_sum += 500.0;  // Conservative transport cost
+    top10_cost_sum += 500.0;
+    top10_cost_sum *= (1.0 + utils::Config::TOLERANCE);  // Apply tolerance to cost
 
     auto& ref_point = const_cast<std::vector<double>&>(TRACKING_REFERENCE_POINT);
     ref_point[0] = top10_cost_sum;
+    ref_point[1] = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
 
     std::cout << "Reference point initialized: [" << ref_point[0] << ", "
               << ref_point[1] << ", " << ref_point[2] << "]" << std::endl;
-    std::cout << "Using time tolerance (tau): " << utils::Config::TIME_TOLERANCE * 100 << "%" << std::endl;
+    std::cout << "Using tolerance factor: " << utils::Config::TOLERANCE * 100 << "%" << std::endl;
 }
 
 void NSGA2::initializePopulation() {
@@ -812,14 +816,10 @@ void NSGA2::mutateTransportModes(IndividualPtr individual) {
             // Get walking travel time
             double walk_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
             
-            // Only switch to WALK if time is below the preference
-            if (individual->transport_genes_[pos].mode == utils::TransportMode::CAR &&
-                walk_time < utils::Config::WALK_TIME_PREFERENCE) {
-                individual->transport_genes_[pos].mode = utils::TransportMode::WALK;
-            } else {
-                // Otherwise, always use CAR
-                individual->transport_genes_[pos].mode = utils::TransportMode::CAR;
-            }
+            // Determine the best mode based on walking time preference
+            individual->transport_genes_[pos].mode = (walk_time < utils::Config::WALK_TIME_PREFERENCE) 
+                ? utils::TransportMode::WALK 
+                : utils::TransportMode::CAR;
             
             // Recalculate costs and times
             individual->calculateTimeAndCosts(*this);
@@ -906,7 +906,8 @@ std::vector<Solution> NSGA2::run() {
     size_t fronts_to_consider = std::min(size_t(4), fronts.size());
     
     // Relaxar progressivamente a restrição de tempo
-    for (double tolerance_factor = 1.0; tolerance_factor <= 1.2; tolerance_factor += 0.05) {
+    double max_tolerance = 1.0 + 2.0 * utils::Config::TOLERANCE;
+    for (double tolerance_factor = 1.0; tolerance_factor <= max_tolerance; tolerance_factor += utils::Config::TOLERANCE / 2) {
         // Para cada fronteira, extrair soluções válidas
         for (size_t f = 0; f < fronts_to_consider; ++f) {
             for (const auto& ind : fronts[f]) {
@@ -988,8 +989,8 @@ void NSGA2::logProgress(size_t generation, const Population& pop) const {
     auto fronts = fastNonDominatedSort(pop);
     if (!fronts.empty()) {
         double hv = calculateHypervolume(pop);
-        std::cout << "Generation " << generation << ": Front size = " << fronts[0].size()
-                << ", Hypervolume = " << hv << std::endl;
+        std::cout << "Generation " << generation << ": Front size = "
+                  << fronts[0].size() << ", Hypervolume = " << hv << std::endl;
     }
 }
 
@@ -1003,21 +1004,17 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
     
     for (const auto& ind : front) {
         Route route = ind->constructRoute(*this);
-        // ...existing code...
-        if (ind->getTotalTime() <= utils::Config::DAILY_TIME_LIMIT * 1.1) { // Tolerância de 10%
+        if (ind->getTotalTime() <= utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE)) { // Tolerância de 10%
             solutions.push_back(Solution(route));
         }
     }
     
     if (solutions.empty()) {
-        std::cout << "Warning: No valid solutions for hypervolume calculation" << std::endl;
+        std::cerr << "Warning: No valid solutions for hypervolume calculation" << std::endl;
         return 0.0;
     }
     
     std::vector<double> reference_point = TRACKING_REFERENCE_POINT;
-    std::cout << "Calculating hypervolume with " << solutions.size() << " solutions" << std::endl;
-    std::cout << "Reference point: [" << reference_point[0] << ", "
-              << reference_point[1] << ", " << reference_point[2] << "]" << std::endl;
     
     std::vector<double> min_values = {
         std::numeric_limits<double>::max(),
@@ -1051,6 +1048,7 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
         }
     }
     
+    double hypervolume = 0.0;
     if (can_normalize) {
         class NormalizedSolution : public Solution {
         public:
@@ -1086,14 +1084,14 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
         }
         
         std::vector<double> norm_reference = {1.0, 1.0, 1.0};
-        double hypervolume = utils::Metrics::calculateHypervolume(normalized_solutions, norm_reference);
-        std::cout << "Normalized hypervolume: " << hypervolume << std::endl;
-        return hypervolume;
+        hypervolume = utils::Metrics::calculateHypervolume(normalized_solutions, norm_reference);
+        // std::cout << "Normalized hypervolume: " << hypervolume << std::endl;
     } else {
-        double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
-        std::cout << "Unnormalized hypervolume: " << hypervolume << std::endl;
-        return hypervolume;
+        hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
+        // std::cout << "Unnormalized hypervolume: " << hypervolume << std::endl;
     }
+
+    return hypervolume;
 }
 
 bool NSGA2::compareByRankAndCrowding(const IndividualPtr& a, const IndividualPtr& b) {

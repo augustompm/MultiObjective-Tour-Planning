@@ -296,9 +296,10 @@ void Solution::calculateObjectives() {
     double time_penalty = 0.0;
     
     // Aplica penalidade para rotas que ultrapassam o limite diário
-    if (total_time > utils::Config::DAILY_TIME_LIMIT) {
-        // Penalização forte: 10x o tempo excedente
-        time_penalty = (total_time - utils::Config::DAILY_TIME_LIMIT) * 10.0;
+    double max_time = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
+    if (total_time > max_time) {
+        double violation = total_time - max_time;
+        time_penalty = violation * (1.0 + violation / max_time);
     }
     
     objectives_ = {

@@ -58,9 +58,6 @@ double HypervolumeCalculator::calculate(
         }
     }
     
-    // Print diagnostics (for debugging)
-    std::cout << "Starting hypervolume calculation with " << points.size() << " points" << std::endl;
-    
     // Verify if reference point is valid (not dominated by any solution)
     // For mixed objectives, the reference point validity check needs to consider
     // direction of optimization for each objective
@@ -85,7 +82,6 @@ double HypervolumeCalculator::calculate(
         
         if (point_dominates_reference) {
             reference_is_valid = false;
-            std::cout << "Warning: Reference point is dominated by at least one solution" << std::endl;
             break;
         }
     }
@@ -115,21 +111,12 @@ double HypervolumeCalculator::calculate(
                 adjusted_reference[i] = min_value + margin;
             }
         }
-        std::cout << "Adjusted reference point to: [";
-        for (size_t i = 0; i < num_objectives; ++i) {
-            std::cout << adjusted_reference[i];
-            if (i < num_objectives - 1) std::cout << ", ";
-        }
-        std::cout << "]" << std::endl;
     } else {
         adjusted_reference = reference_point;
     }
     
     // Call the recursive HSO algorithm with the adjusted reference point
     double volume = hso(std::move(points), 0, num_objectives, adjusted_reference).volume;
-    
-    // Print the result (for debugging)
-    std::cout << "Calculated hypervolume: " << volume << std::endl;
     
     return volume;
 }
