@@ -1,0 +1,60 @@
+# Visualizador de Resultados NSGA-II
+
+Esta ferramenta fornece uma interface interativa para visualizar os resultados da otimização multiobjetivo NSGA-II para rotas turísticas.
+
+## Características
+
+- **Visualização 3D das Soluções**: Gráfico interativo 3D mostrando as soluções não-dominadas no espaço dos objetivos (custo, tempo, número de atrações).
+- **Explorador de Soluções**: Interface com slider para navegar entre as diferentes soluções encontradas.
+- **Timeline Detalhado**: Visualização cronológica de cada solução, mostrando atrações, horários e modos de transporte.
+- **Análise de Convergência**: Gráficos da evolução do hipervolume, spread e tamanho da fronteira ao longo das gerações.
+
+## Requisitos
+
+- Python 3.7+
+- Pacotes listados em `requirements.txt`
+
+## Instalação
+
+1. Navegue até a pasta de visualização:
+   ```
+   cd visualization
+   ```
+
+2. Instale as dependências necessárias:
+   ```
+   pip install -r requirements.txt
+   ```
+
+## Uso
+
+1. Execute o script de visualização:
+   ```
+   python results_visualizer.py
+   ```
+
+2. Abra seu navegador e acesse:
+   ```
+   http://127.0.0.1:8050/
+   ```
+
+3. Alternativamente, abra o arquivo `launch_visualizer.html` no seu navegador para instruções e um botão de acesso rápido.
+
+## Estrutura dos Dados
+
+A ferramenta espera dois arquivos CSV:
+
+1. **resultados_nsga2.csv**: Contém as soluções não-dominadas encontradas pelo algoritmo, incluindo detalhes como custo, tempo, atrações visitadas e informações de rota.
+
+2. **geracoes_nsga2.csv**: Contém métricas sobre o progresso do algoritmo ao longo das gerações, como hipervolume, spread e tamanho da fronteira.
+
+## Interatividade
+
+- **Gráfico 3D**: Rotacione, aproxime e explore as soluções no espaço tridimensional.
+- **Slider de Soluções**: Navegue entre as diferentes soluções para ver seus detalhes.
+- **Abas de Métricas**: Alterne entre diferentes visualizações da evolução do algoritmo.
+
+## Troubleshooting
+
+- Se os arquivos CSV não forem encontrados, verifique se eles estão no diretório pai conforme configurado no script.
+- Se os gráficos não carregarem corretamente, verifique se todos os pacotes estão instalados e se os formatos dos arquivos CSV correspondem ao esperado.

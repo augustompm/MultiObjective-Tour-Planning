@@ -179,9 +179,8 @@ double Transport::getTravelCost(const std::string& from, const std::string& to, 
 TransportMode Transport::determinePreferredMode(const std::string& from, const std::string& to) {
     try {
         double walk_time = getTravelTime(from, to, TransportMode::WALK);
-        
-        // Se o tempo de caminhada for menor que o limite de preferência, recomenda caminhada
-        if (walk_time < Config::WALK_TIME_PREFERENCE) {
+        // Verificação mais estrita: só considera caminhada se for menor que o limite de preferência
+        if (walk_time <= Config::WALK_TIME_PREFERENCE) {
             return TransportMode::WALK;
         } else {
             return TransportMode::CAR;

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançador de Visualização NSGA-II</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        h1 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .step {
+            margin-bottom: 30px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Visualizador de Resultados NSGA-II</h1>
+        
+        <div class="step">
+            <h2><span class="step-number">1</span>Instalação de Dependências</h2>
+            <p>Antes de iniciar a visualização, certifique-se de instalar todas as dependências necessárias:</p>
+            <pre>pip install -r requirements.txt</pre>
+        </div>
+        
+        <div class="step">
+            <h2><span class="step-number">2</span>Iniciar o Visualizador</h2>
+            <p>Execute o script Python para iniciar o servidor de visualização:</p>
+            <pre>python results_visualizer.py</pre>
+            <p>O servidor será iniciado e o dashboard estará disponível no seu navegador.</p>
+        </div>
+        
+        <div class="step">
+            <h2><span class="step-number">3</span>Acesso ao Dashboard</h2>
+            <p>Por padrão, o dashboard estará disponível em:</p>
+            <pre>http://127.0.0.1:8050/</pre>
+            <p>Clique no botão abaixo para tentar abrir o dashboard (supondo que o servidor já esteja em execução):</p>
+            <button class="btn" onclick="window.open('http://127.0.0.1:8050/', '_blank')">Abrir Dashboard</button>
+        </div>
+        
+        <div class="step">
+            <h2><span class="step-number">4</span>Funcionalidades</h2>
+            <ul>
+                <li>Visualização 3D das soluções não-dominadas</li>
+                <li>Explorador de soluções individuais com detalhes de cada roteiro</li>
+                <li>Gráficos da evolução do algoritmo ao longo das gerações</li>
+                <li>Timeline detalhado de cada solução com tempos e modos de transporte</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

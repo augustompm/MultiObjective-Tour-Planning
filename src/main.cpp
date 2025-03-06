@@ -248,14 +248,95 @@ int main() {
                 : 10000.0;
             double time_ref = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
             std::vector<double> reference_point = {cost_ref, time_ref, 0.0};
+            
+            // Calcular métricas para as soluções finais retornadas
             const double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
             const double spread = utils::Metrics::calculateSpread(solutions);
             
-            std::cout << "=== Métricas de Qualidade ===\n";
-            std::cout << "- Hipervolume: " << std::fixed << std::setprecision(4) << hypervolume << "\n";
-            std::cout << "- Spread: " << std::fixed << std::setprecision(4) << spread << "\n\n";
+            // Exibir métricas da última geração (obtidas do CSV)
+            std::ifstream gen_file("geracoes_nsga2.csv");
+            std::string line;
+            std::string last_gen_line;
+            double last_gen_hv = 0.0;
+            double last_gen_spread = 0.0;
+            int last_gen_num = 0;
             
-            const size_t num_to_show = std::min(size_t(5), solutions.size());
+            if (gen_file.is_open()) {
+                // Pular linha de cabeçalho
+                std::getline(gen_file, line);
+                // Ler até a última linha não-vazia antes das métricas finais
+                while (std::getline(gen_file, line)) {
+                    if (line.empty() || line.find("Final metrics") != std::string::npos) {
+                        break;
+                    }
+                    last_gen_line = line;
+                }
+                // Processar a última linha de geração
+                if (!last_gen_line.empty()) {
+                    std::stringstream ss(last_gen_line);
+                    std::string token;
+                    std::getline(ss, token, ';'); // Geração
+                    last_gen_num = std::stoi(token);
+                    std::getline(ss, token, ';'); // Tamanho da fronteira
+                    std::getline(ss, token, ';'); // Hipervolume
+                    last_gen_hv = std::stod(token);
+                    std::getline(ss, token, ';'); // Spread
+                    last_gen_spread = std::stod(token);
+                }
+                // Ler métricas finais
+                double best_hv = 0.0;
+                double best_spread = 0.0;
+                int best_gen = 0;
+                while (std::getline(gen_file, line)) {
+                    if (line.find("Final Hypervolume") != std::string::npos) {
+                        std::stringstream ss(line);
+                        std::string token;
+                        std::getline(ss, token, ';'); 
+                        std::getline(ss, token, ';'); 
+                        best_hv = std::stod(token);
+                    } else if (line.find("Final Spread") != std::string::npos) {
+                        std::stringstream ss(line);
+                        std::string token;
+                        std::getline(ss, token, ';'); 
+                        std::getline(ss, token, ';'); 
+                        best_spread = std::stod(token);
+                    }
+                }
+                // Encontrar qual geração teve o melhor hipervolume
+                gen_file.clear();
+                gen_file.seekg(0, std::ios::beg);
+                // Pular linha de cabeçalho
+                std::getline(gen_file, line);
+                while (std::getline(gen_file, line)) {
+                    if (line.empty() || line.find("Final metrics") != std::string::npos) {
+                        break;
+                    }
+                    std::stringstream ss(line);
+                    std::string token;
+                    std::getline(ss, token, ';');
+                    int gen_num = std::stoi(token);
+                    std::getline(ss, token, ';'); // Tamanho da fronteira
+                    std::getline(ss, token, ';'); // Hipervolume
+                    double hv = std::stod(token);
+                    if (std::abs(hv - best_hv) < 1e-5) {
+                        best_gen = gen_num;
+                        break;
+                    }
+                }
+                std::cout << "=== Métricas da Última Geração (" << last_gen_num << ") ===\n";
+                std::cout << "- Hipervolume: " << std::scientific << std::setprecision(6) << last_gen_hv << "\n";
+                std::cout << "- Spread: " << std::fixed << std::setprecision(6) << last_gen_spread << "\n\n";
+                std::cout << "=== Métricas da Melhor População (Geração " << best_gen << ") ===\n";
+                std::cout << "- Hipervolume: " << std::scientific << std::setprecision(6) << best_hv << "\n";
+                std::cout << "- Spread: " << std::fixed << std::setprecision(6) << best_spread << "\n\n";
+            } else {
+                // Fallback
+                std::cout << "=== Métricas de Qualidade ===\n";
+                std::cout << "- Hipervolume: " << std::fixed << std::setprecision(4) << hypervolume << "\n";
+                std::cout << "- Spread: " << std::fixed << std::setprecision(4) << spread << "\n\n";
+            }
+            
+            const size_t num_to_show = std::min(size_t(3), solutions.size());
             std::cout << "=== Melhores Soluções ===\n";
             std::cout << "Mostrando " << num_to_show << " soluções representativas:\n";
             

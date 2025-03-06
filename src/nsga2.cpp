@@ -11,6 +11,8 @@
 #include <random>
 #include <unordered_set>
 #include "hypervolume.hpp"  // New include for hypervolume metrics
+#include <chrono>
+#include <fstream>
 
 namespace tourist {
 
@@ -166,6 +168,18 @@ void NSGA2::Individual::calculateTimeAndCosts(const NSGA2& algorithm) {
             trans_gene.start_time = current_time;
             
             try {
+                // Verificar se o modo de transporte é apropriado para a distância
+                if (trans_gene.mode == utils::TransportMode::WALK) {
+                    double walk_time = utils::Transport::getTravelTime(
+                        attraction.getName(), 
+                        next_attraction.getName(), 
+                        utils::TransportMode::WALK
+                    );
+                    // Se o tempo de caminhada exceder o limite de preferência, mudar para carro
+                    if (walk_time > utils::Config::WALK_TIME_PREFERENCE) {
+                        trans_gene.mode = utils::TransportMode::CAR;
+                    }
+                }
                 // Calcular duração e custo do transporte
                 trans_gene.duration = utils::Transport::getTravelTime(
                     attraction.getName(), 
@@ -208,40 +222,33 @@ void NSGA2::Individual::calculateTimeAndCosts(const NSGA2& algorithm) {
 
 void NSGA2::Individual::determineTransportModes(const NSGA2& algorithm) {
     if (attraction_genes_.size() <= 1) return;
-    
     // Verificar cada par adjacente de atrações
     for (size_t i = 0; i < attraction_genes_.size() - 1; ++i) {
         if (i >= transport_genes_.size()) {
             transport_genes_.resize(attraction_genes_.size() - 1);
         }
-        
         int from_idx = attraction_genes_[i].attraction_index;
         int to_idx = attraction_genes_[i+1].attraction_index;
-        
         if (from_idx >= 0 && static_cast<size_t>(from_idx) < algorithm.attractions_.size() &&
             to_idx >= 0 && static_cast<size_t>(to_idx) < algorithm.attractions_.size()) {
-            
             try {
-                // Obtém os nomes das atrações
                 const std::string& from = algorithm.attractions_[from_idx].getName();
                 const std::string& to = algorithm.attractions_[to_idx].getName();
-                
-                // Usar a função determinePreferredMode diretamente
-                transport_genes_[i].mode = utils::Transport::determinePreferredMode(from, to);
-                
-                // Adicionar log para depuração
-                // double walking_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
-                // std::cout << "From " << from << " to " << to << ", walking time: " 
-                //           << walking_time << " min, chosen mode: " 
-                //           << (transport_genes_[i].mode == utils::TransportMode::WALK ? "WALK" : "CAR") 
-                //           << std::endl;
+                double walk_time = 0.0;
+                try {
+                    walk_time = utils::Transport::getTravelTime(from, to, utils::TransportMode::WALK);
+                } catch (...) {
+                    walk_time = utils::Config::WALK_TIME_PREFERENCE + 1.0; // Forçar uso de carro
+                }
+                if (walk_time <= utils::Config::WALK_TIME_PREFERENCE) {
+                    transport_genes_[i].mode = utils::TransportMode::WALK;
+                } else {
+                    transport_genes_[i].mode = utils::TransportMode::CAR;
+                }
             } catch (const std::exception& e) {
-                // Tratamento de erro: usar modo padrão
                 transport_genes_[i].mode = utils::TransportMode::CAR;
-                std::cerr << "Error determining transport mode: " << e.what() << std::endl;
             }
         } else {
-            // Em caso de índices inválidos, usa modo padrão
             transport_genes_[i].mode = utils::TransportMode::CAR;
         }
     }
@@ -881,6 +888,19 @@ std::vector<Solution> NSGA2::run() {
     double best_hypervolume = 0.0;
     Population best_population = population_;
     
+    // Criar arquivo para registrar dados das gerações
+    std::ofstream generations_file("geracoes_nsga2.csv", std::ios::out);
+    if (generations_file.is_open()) {
+        generations_file << "Generation;Front size;Hypervolume;Spread" << std::endl;
+    }
+
+    // Registrar o tempo de início
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    double current_spread = 0.0;
+    double final_spread = 0.0;
+    double final_hypervolume = 0.0;
+
     for (size_t gen = 0; gen < params_.max_generations; ++gen) {
         auto offspring = createOffspring(population_);
         evaluatePopulation(offspring); // Garantir que offspring seja avaliado
@@ -895,9 +915,59 @@ std::vector<Solution> NSGA2::run() {
             best_population = population_;
         }
         
+        auto fronts = fastNonDominatedSort(population_);
+        if (!fronts.empty()) {
+            std::vector<Solution> solutions;
+            for (const auto& ind : fronts[0]) {
+                Route route = ind->constructRoute(*this);
+                if (ind->is_valid_ && !route.getAttractions().empty()) {
+                    solutions.push_back(Solution(route));
+                }
+            }
+            current_spread = utils::Metrics::calculateSpread(solutions);
+        } else {
+            current_spread = 0.0;
+        }
+
         logProgress(gen, population_);
+
+        // Registrar dados da geração no arquivo CSV
+        if (generations_file.is_open()) {
+            generations_file << gen << ";" 
+                             << (!fronts.empty() ? fronts[0].size() : 0) << ";" 
+                             << current_hv << ";" 
+                             << current_spread << std::endl;
+        }
     }
-    
+
+    final_hypervolume = best_hypervolume;
+
+    // Registrar o tempo de término
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    double execution_time_ms = duration.count();
+
+    auto final_fronts = fastNonDominatedSort(best_population);
+    if (!final_fronts.empty()) {
+        std::vector<Solution> solutions;
+        for (const auto& ind : final_fronts[0]) {
+            Route route = ind->constructRoute(*this);
+            if (ind->is_valid_ && !route.getAttractions().empty()) {
+                solutions.push_back(Solution(route));
+            }
+        }
+        final_spread = utils::Metrics::calculateSpread(solutions);
+    }
+
+    // Adicionar métricas finais ao arquivo CSV
+    if (generations_file.is_open()) {
+        generations_file << "\nFinal metrics:" << std::endl;
+        generations_file << "Final Hypervolume;" << final_hypervolume << std::endl;
+        generations_file << "Final Spread;" << final_spread << std::endl;
+        generations_file << "Execution Time (ms);" << execution_time_ms << std::endl;
+        generations_file.close();
+    }
+
     // Usar a população com melhor hipervolume para gerar soluções
     auto fronts = fastNonDominatedSort(best_population);
     std::vector<Solution> solutions;
@@ -989,8 +1059,18 @@ void NSGA2::logProgress(size_t generation, const Population& pop) const {
     auto fronts = fastNonDominatedSort(pop);
     if (!fronts.empty()) {
         double hv = calculateHypervolume(pop);
+        // Calcular o spread da fronteira
+        std::vector<Solution> solutions;
+        for (const auto& ind : fronts[0]) {
+            Route route = ind->constructRoute(*this);
+            if (ind->is_valid_ && !route.getAttractions().empty()) {
+                solutions.push_back(Solution(route));
+            }
+        }
+        double spread = utils::Metrics::calculateSpread(solutions);
         std::cout << "Generation " << generation << ": Front size = "
-                  << fronts[0].size() << ", Hypervolume = " << hv << std::endl;
+                  << fronts[0].size() << ", Hypervolume = " << hv
+                  << ", Spread = " << spread << std::endl;
     }
 }
 
@@ -1010,86 +1090,12 @@ double NSGA2::calculateHypervolume(const Population& pop) const {
     }
     
     if (solutions.empty()) {
-        std::cerr << "Warning: No valid solutions for hypervolume calculation" << std::endl;
         return 0.0;
     }
     
     std::vector<double> reference_point = TRACKING_REFERENCE_POINT;
     
-    std::vector<double> min_values = {
-        std::numeric_limits<double>::max(),
-        std::numeric_limits<double>::max(),
-        std::numeric_limits<double>::max()
-    };
-    std::vector<double> max_values = {
-        std::numeric_limits<double>::lowest(),
-        std::numeric_limits<double>::lowest(),
-        std::numeric_limits<double>::lowest()
-    };
-    
-    for (const auto& sol : solutions) {
-        const auto& obj = sol.getObjectives();
-        for (size_t i = 0; i < obj.size() && i < 3; i++) {
-            min_values[i] = std::min(min_values[i], obj[i]);
-            max_values[i] = std::max(max_values[i], obj[i]);
-        }
-    }
-    
-    for (size_t i = 0; i < reference_point.size() && i < 3; i++) {
-        min_values[i] = std::min(min_values[i], reference_point[i]);
-        max_values[i] = std::max(max_values[i], reference_point[i]);
-    }
-    
-    bool can_normalize = true;
-    for (size_t i = 0; i < max_values.size() && i < min_values.size(); i++) {
-        if (std::abs(max_values[i] - min_values[i]) < 1e-10) {
-            can_normalize = false;
-            break;
-        }
-    }
-    
-    double hypervolume = 0.0;
-    if (can_normalize) {
-        class NormalizedSolution : public Solution {
-        public:
-            NormalizedSolution(const Solution& orig,
-                               const std::vector<double>& min_vals,
-                               const std::vector<double>& max_vals)
-                : Solution(orig.getRoute()), original_objectives_(orig.getObjectives()) {
-                std::vector<double> norm_obj(original_objectives_.size());
-                for (size_t i = 0; i < original_objectives_.size(); i++) {
-                    double range = max_vals[i] - min_vals[i];
-                    if (i == 2) {
-                        norm_obj[i] = (original_objectives_[i] - min_vals[i]) / range;
-                    } else {
-                        norm_obj[i] = (original_objectives_[i] - min_vals[i]) / range;
-                    }
-                }
-                normalized_objectives_ = norm_obj;
-            }
-            
-            std::vector<double> getObjectives() const override {
-                return normalized_objectives_;
-            }
-            
-        private:
-            std::vector<double> original_objectives_;
-            std::vector<double> normalized_objectives_;
-        };
-        
-        std::vector<Solution> normalized_solutions;
-        normalized_solutions.reserve(solutions.size());
-        for (const auto& sol : solutions) {
-            normalized_solutions.push_back(NormalizedSolution(sol, min_values, max_values));
-        }
-        
-        std::vector<double> norm_reference = {1.0, 1.0, 1.0};
-        hypervolume = utils::Metrics::calculateHypervolume(normalized_solutions, norm_reference);
-        // std::cout << "Normalized hypervolume: " << hypervolume << std::endl;
-    } else {
-        hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
-        // std::cout << "Unnormalized hypervolume: " << hypervolume << std::endl;
-    }
+    double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
 
     return hypervolume;
 }
