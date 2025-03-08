@@ -167,10 +167,10 @@ int main() {
         
         // Encontrar os arquivos de matriz mais recentes
         const std::string osrm_path = "../OSRM/";  // Use relative path from build directory
-        const std::string car_dist_file = osrm_path + "matriz_distancias_carro_metros_2025-02-25_11-55-15.csv";
-        const std::string walk_dist_file = osrm_path + "matriz_distancias_pe_metros_2025-02-25_11-55-15.csv";
-        const std::string car_time_file = osrm_path + "matriz_tempos_carro_min_2025-02-25_11-55-15.csv";
-        const std::string walk_time_file = osrm_path + "matriz_tempos_pe_min_2025-02-25_11-55-15.csv";
+        const std::string car_dist_file = osrm_path + "matriz_distancias_carro_metros_2025-03-07_17-03-54.csv";
+        const std::string walk_dist_file = osrm_path + "matriz_distancias_pe_metros_2025-03-07_17-03-54.csv";
+        const std::string car_time_file = osrm_path + "matriz_tempos_carro_min_2025-03-07_17-03-54.csv";
+        const std::string walk_time_file = osrm_path + "matriz_tempos_pe_min_2025-03-07_17-03-54.csv";
         // Carregar as matrizes de distância e tempo
         std::cout << "Carregando matrizes de distância e tempo...\n";
         if (!utils::Parser::loadTransportMatrices(car_dist_file, walk_dist_file, car_time_file, walk_time_file)) {

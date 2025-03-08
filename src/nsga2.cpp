@@ -446,7 +446,7 @@ std::vector<NSGA2::Front> NSGA2::fastNonDominatedSort(const Population& pop) con
     std::vector<std::set<size_t>> dominated_sets(pop.size());
     std::vector<int> domination_counts(pop.size(), 0);
 
-    // Primeiro passe: determinar as relações de dominação
+    // Primeiro passe: determinar as relações de dominação - não usar dominância // ordenar todos pelo primeiro obj 
     for (size_t i = 0; i < pop.size(); ++i) {
         for (size_t j = i + 1; j < pop.size(); ++j) {
             if (pop[i]->dominates(*pop[j])) {
@@ -863,7 +863,7 @@ NSGA2::Population NSGA2::selectNextGeneration(const Population& parents, const P
     
     size_t i = 0;
     while (i < fronts.size() && next_gen.size() + fronts[i].size() <= params_.population_size) {
-        calculateCrowdingDistances(fronts[i]);
+       // calculateCrowdingDistances(fronts[i]);
         next_gen.insert(next_gen.end(), fronts[i].begin(), fronts[i].end());
         i++;
     }
