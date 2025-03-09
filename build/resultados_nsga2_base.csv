@@ -1,23 +1,40 @@
 Solucao;CustoTotal;TempoTotal;NumAtracoes;HoraInicio;HoraFim;Sequencia;TemposChegada;TemposPartida;ModosTransporte
-1;104.41;478.00;6;09:00;16:58;Centro Cultural Jerusalém|Real Gabinete Português Da Leitura|Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|10:16|12:32|13:43|14:47|15:58|;10:00|12:16|13:32|14:43|15:47|16:58|;Car|Walk|Walk|Car|Walk|
-2;166.28;471.00;6;09:00;16:51;Centro Cultural Jerusalém|Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|Real Gabinete Português Da Leitura|Mosteiro De São Bento|;09:00|10:14|11:18|12:29|13:39|15:51|;10:00|11:14|12:18|13:29|15:39|16:51|;Car|Car|Walk|Walk|Car|
-3;196.55;469.00;6;09:00;16:49;Centro Cultural Jerusalém|Escadaria Selarón|Pedra do Sal|Bondinho de Santa Teresa|Real Gabinete Português Da Leitura|Mosteiro De São Bento|;09:00|10:17|11:23|12:27|13:37|15:49|;10:00|11:17|12:23|13:27|15:37|16:49|;Car|Car|Car|Walk|Car|
-4;0.00;411.00;5;09:00;15:51;Escadaria Selarón|Bondinho de Santa Teresa|Real Gabinete Português Da Leitura|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:21|13:40|14:51|;10:00|11:11|13:21|14:40|15:51|;Walk|Walk|Walk|Walk|
-5;18.47;403.00;5;09:00;15:43;Escadaria Selarón|Real Gabinete Português Da Leitura|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|10:18|12:28|13:32|14:43|;10:00|12:18|13:28|14:32|15:43|;Walk|Walk|Car|Walk|
-6;87.61;397.00;5;09:00;15:37;Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|Real Gabinete Português Da Leitura|Mosteiro De São Bento|;09:00|10:04|11:15|12:25|14:37|;10:00|11:04|12:15|14:25|15:37|;Car|Walk|Walk|Car|
-7;95.41;396.00;5;09:00;15:36;Escadaria Selarón|Bondinho de Santa Teresa|AquaRio|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:14|13:25|14:36|;10:00|11:11|13:14|14:25|15:36|;Walk|Car|Walk|Walk|
-8;102.26;343.00;5;09:00;14:43;Centro Cultural Jerusalém|Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|10:17|11:28|12:32|13:43|;10:00|11:17|12:28|13:32|14:43|;Car|Walk|Car|Walk|
-9;171.94;341.00;5;09:00;14:41;Centro Cultural Jerusalém|Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|Mosteiro De São Bento|;09:00|10:14|11:18|12:29|13:41|;10:00|11:14|12:18|13:29|14:41|;Car|Car|Walk|Car|
-10;202.21;339.00;5;09:00;14:39;Centro Cultural Jerusalém|Escadaria Selarón|Pedra do Sal|Bondinho de Santa Teresa|Mosteiro De São Bento|;09:00|10:17|11:23|12:27|13:39|;10:00|11:17|12:23|13:27|14:39|;Car|Car|Car|Car|
-11;0.00;338.00;4;09:00;14:38;Pedra do Sal|Real Gabinete Português Da Leitura|Bondinho de Santa Teresa|Escadaria Selarón|;09:00|10:17|12:27|13:38|;10:00|12:17|13:27|14:38|;Walk|Walk|Walk|
-12;17.77;325.00;4;09:00;14:25;Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|Real Gabinete Português Da Leitura|;09:00|10:04|11:15|12:25|;10:00|11:04|12:15|14:25|;Car|Walk|Walk|
-13;18.47;266.00;4;09:00;13:26;Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:15|12:26|;10:00|11:11|12:15|13:26|;Walk|Car|Walk|
-14;111.97;261.00;4;09:00;13:21;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|Mosteiro De São Bento|;09:00|10:04|11:08|12:21|;10:00|11:04|12:08|13:21|;Car|Car|Car|
-15;0.00;266.00;3;09:00;13:26;Bondinho de Santa Teresa|Real Gabinete Português Da Leitura|Escadaria Selarón|;09:00|10:10|12:26|;10:00|12:10|13:26|;Walk|Walk|
-16;17.77;195.00;3;09:00;12:15;Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|;09:00|10:04|11:15|;10:00|11:04|12:15|;Car|Walk|
-17;36.24;188.00;3;09:00;12:08;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|;09:00|10:04|11:08|;10:00|11:04|12:08|;Car|Car|
-18;0.00;131.00;2;09:00;11:11;Escadaria Selarón|Bondinho de Santa Teresa|;09:00|10:11|;10:00|11:11|;Walk|
-19;17.77;124.00;2;09:00;11:04;Pedra do Sal|Escadaria Selarón|;09:00|10:04|;10:00|11:04|;Car|
-20;0.00;60.00;1;09:00;10:00;Pedra do Sal|;09:00|;10:00|;
-21;0.00;60.00;1;09:00;10:00;Bondinho de Santa Teresa|;09:00|;10:00|;
-22;0.00;60.00;1;09:00;10:00;Escadaria Selarón|;09:00|;10:00|;
+1;256.88;672.00;7;09:00;20:12;Escadaria Selarón|Bondinho de Santa Teresa|AquaRio|Pedra do Sal|Centro Cultural Jerusalém|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:11|11:14|13:25|14:40|15:55|17:12|;10:00|11:11|13:14|14:25|15:40|16:55|20:12|;Walk|Car|Walk|Car|Car|Walk|
+2;267.11;663.00;7;09:00;20:03;Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|AquaRio|Centro Cultural Jerusalém|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:04|11:15|12:18|14:31|15:46|17:03|;10:00|11:04|12:15|14:18|15:31|16:46|20:03|;Car|Walk|Car|Car|Car|Walk|
+3;291.71;658.00;7;09:00;19:58;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|AquaRio|Centro Cultural Jerusalém|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:04|11:08|12:13|14:26|15:41|16:58|;10:00|11:04|12:08|14:13|15:26|16:41|19:58|;Car|Car|Car|Car|Car|Walk|
+4;93.47;602.00;6;09:00;19:02;Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|AquaRio|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:11|11:15|12:26|14:45|16:02|;10:00|11:11|12:15|14:26|15:45|19:02|;Walk|Car|Walk|Walk|Walk|
+5;95.41;593.00;6;09:00;18:53;Escadaria Selarón|Bondinho de Santa Teresa|AquaRio|Pedra do Sal|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:11|11:14|13:25|14:36|15:53|;10:00|11:11|13:14|14:25|15:36|18:53|;Walk|Car|Walk|Walk|Walk|
+6;129.62;590.00;6;09:00;18:50;AquaRio|Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|11:07|12:18|13:22|14:33|15:50|;11:00|12:07|13:18|14:22|15:33|18:50|;Car|Walk|Car|Walk|Walk|
+7;137.77;589.00;6;09:00;18:49;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|AquaRio|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:04|11:08|12:13|14:32|15:49|;10:00|11:04|12:08|14:13|15:32|18:49|;Car|Car|Car|Walk|Walk|
+8;156.15;584.00;6;09:00;18:44;Bondinho de Santa Teresa|AquaRio|Escadaria Selarón|Pedra do Sal|Mosteiro De São Bento|Centro Cultural Banco do Brasil|;09:00|10:03|12:10|13:16|14:27|15:44|;10:00|12:03|13:10|14:16|15:27|18:44|;Car|Car|Car|Walk|Walk|
+9;202.94;466.00;6;09:00;16:46;Centro Cultural Jerusalém|AquaRio|Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|10:13|12:20|13:31|14:35|15:46|;10:00|12:13|13:20|14:31|15:35|16:46|;Car|Car|Walk|Car|Walk|
+10;242.66;464.00;6;09:00;16:44;Centro Cultural Jerusalém|Bondinho de Santa Teresa|AquaRio|Escadaria Selarón|Pedra do Sal|Mosteiro De São Bento|;09:00|10:17|11:20|13:27|14:33|15:44|;10:00|11:17|13:20|14:27|15:33|16:44|;Car|Car|Car|Car|Walk|
+11;291.71;461.00;6;09:00;16:41;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|AquaRio|Centro Cultural Jerusalém|Mosteiro De São Bento|;09:00|10:04|11:08|12:13|14:26|15:41|;10:00|11:04|12:08|14:13|15:26|16:41|;Car|Car|Car|Car|Car|
+12;0.00;474.00;5;09:00;16:54;Escadaria Selarón|Bondinho de Santa Teresa|Centro Cultural Banco do Brasil|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:28|14:43|15:54|;10:00|11:11|14:28|15:43|16:54|;Walk|Walk|Walk|Walk|
+13;14.75;460.00;5;09:00;16:40;Bondinho de Santa Teresa|Escadaria Selarón|Centro Cultural Banco do Brasil|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:14|14:29|15:40|;10:00|11:11|14:14|15:29|16:40|;Walk|Car|Walk|Walk|
+14;33.08;453.00;5;09:00;16:33;Pedra do Sal|Bondinho de Santa Teresa|Escadaria Selarón|Centro Cultural Banco do Brasil|Mosteiro De São Bento|;09:00|10:04|11:15|12:18|15:33|;10:00|11:04|12:15|15:18|16:33|;Car|Walk|Car|Walk|
+15;38.38;451.00;5;09:00;16:31;Centro Cultural Banco do Brasil|Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|12:05|13:16|14:20|15:31|;12:00|13:05|14:16|15:20|16:31|;Car|Walk|Car|Walk|
+16;50.99;446.00;5;09:00;16:26;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|Centro Cultural Banco do Brasil|Mosteiro De São Bento|;09:00|10:04|11:08|12:11|15:26|;10:00|11:04|12:08|15:11|16:26|;Car|Car|Car|Walk|
+17;93.47;405.00;5;09:00;15:45;Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|AquaRio|Mosteiro De São Bento|;09:00|10:11|11:15|12:26|14:45|;10:00|11:11|12:15|14:26|15:45|;Walk|Car|Walk|Walk|
+18;95.41;396.00;5;09:00;15:36;Escadaria Selarón|Bondinho de Santa Teresa|AquaRio|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:14|13:25|14:36|;10:00|11:11|13:14|14:25|15:36|;Walk|Car|Walk|Walk|
+19;129.62;393.00;5;09:00;15:33;AquaRio|Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|11:07|12:18|13:22|14:33|;11:00|12:07|13:18|14:22|15:33|;Car|Walk|Car|Walk|
+20;137.77;392.00;5;09:00;15:32;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|AquaRio|Mosteiro De São Bento|;09:00|10:04|11:08|12:13|14:32|;10:00|11:04|12:08|14:13|15:32|;Car|Car|Car|Walk|
+21;156.15;387.00;5;09:00;15:27;Bondinho de Santa Teresa|AquaRio|Escadaria Selarón|Pedra do Sal|Mosteiro De São Bento|;09:00|10:03|12:10|13:16|14:27|;10:00|12:03|13:10|14:16|15:27|;Car|Car|Car|Walk|
+22;182.83;355.00;5;09:00;14:55;Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|Centro Cultural Jerusalém|;09:00|10:11|11:15|12:26|13:55|;10:00|11:11|12:15|13:26|14:55|;Walk|Car|Walk|Car|
+23;198.48;338.00;5;09:00;14:38;Centro Cultural Jerusalém|Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|Mosteiro De São Bento|;09:00|10:17|11:21|12:25|13:38|;10:00|11:17|12:21|13:25|14:38|;Car|Car|Car|Car|
+24;0.00;403.00;4;09:00;15:43;Bondinho de Santa Teresa|Centro Cultural Banco do Brasil|Pedra do Sal|Mosteiro De São Bento|;09:00|10:17|13:32|14:43|;10:00|13:17|14:32|15:43|;Walk|Walk|Walk|
+25;0.00;403.00;4;09:00;15:43;Escadaria Selarón|Bondinho de Santa Teresa|Centro Cultural Banco do Brasil|Pedra do Sal|;09:00|10:11|11:28|14:43|;10:00|11:11|14:28|15:43|;Walk|Walk|Walk|
+26;14.75;389.00;4;09:00;15:29;Bondinho de Santa Teresa|Escadaria Selarón|Centro Cultural Banco do Brasil|Pedra do Sal|;09:00|10:11|11:14|14:29|;10:00|11:11|14:14|15:29|;Walk|Car|Walk|
+27;18.47;266.00;4;09:00;13:26;Escadaria Selarón|Bondinho de Santa Teresa|Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|11:15|12:26|;10:00|11:11|12:15|13:26|;Walk|Car|Walk|
+28;111.97;261.00;4;09:00;13:21;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|Mosteiro De São Bento|;09:00|10:04|11:08|12:21|;10:00|11:04|12:08|13:21|;Car|Car|Car|
+29;0.00;326.00;3;09:00;14:26;Centro Cultural Banco do Brasil|Pedra do Sal|Mosteiro De São Bento|;09:00|12:15|13:26|;12:00|13:15|14:26|;Walk|Walk|
+30;14.75;314.00;3;09:00;14:14;Bondinho de Santa Teresa|Escadaria Selarón|Centro Cultural Banco do Brasil|;09:00|10:11|11:14|;10:00|11:11|14:14|;Walk|Car|
+31;17.77;195.00;3;09:00;12:15;Pedra do Sal|Escadaria Selarón|Bondinho de Santa Teresa|;09:00|10:04|11:15|;10:00|11:04|12:15|;Car|Walk|
+32;36.24;188.00;3;09:00;12:08;Bondinho de Santa Teresa|Pedra do Sal|Escadaria Selarón|;09:00|10:04|11:08|;10:00|11:04|12:08|;Car|Car|
+33;0.00;131.00;2;09:00;11:11;Pedra do Sal|Mosteiro De São Bento|;09:00|10:11|;10:00|11:11|;Walk|
+34;0.00;131.00;2;09:00;11:11;Bondinho de Santa Teresa|Escadaria Selarón|;09:00|10:11|;10:00|11:11|;Walk|
+35;17.77;124.00;2;09:00;11:04;Pedra do Sal|Escadaria Selarón|;09:00|10:04|;10:00|11:04|;Car|
+36;0.00;60.00;1;09:00;10:00;Mosteiro De São Bento|;09:00|;10:00|;
+37;0.00;60.00;1;09:00;10:00;Bondinho de Santa Teresa|;09:00|;10:00|;
+38;0.00;60.00;1;09:00;10:00;Escadaria Selarón|;09:00|;10:00|;
+39;0.00;60.00;1;09:00;10:00;Pedra do Sal|;09:00|;10:00|;
