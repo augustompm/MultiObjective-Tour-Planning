@@ -139,7 +139,6 @@ private:
     std::vector<Front> fastNonDominatedSort(const Population& pop) const;
     void calculateCrowdingDistances(Front& front) const;
     Population createOffspring(const Population& parents);
-    Population selectNextGeneration(const Population& parents, const Population& offspring);
     
     // Operadores genéticos
     IndividualPtr tournamentSelection(const Population& pop);

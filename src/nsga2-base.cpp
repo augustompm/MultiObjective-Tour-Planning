@@ -10,7 +10,7 @@
 #include <fstream>
 #include <cmath>
 #include <unordered_set>
-#include <unordered_map>
+#include <iomanip>  // For std::setprecision
 
 namespace tourist {
 
@@ -43,14 +43,14 @@ void NSGA2Base::Individual::evaluate(const NSGA2Base& algorithm) {
     double total_time = route.getTotalTime();
     int num_attractions = route.getNumAttractions();
     
-    // Check if route is valid and has attractions
-    bool is_valid = route.isValid() && num_attractions > 0;
+    // Check if route is valid
+    bool is_valid = route.isValid();
     
-    // Apply penalties for invalid routes
-    if (!is_valid) {
+    // Apply penalties for invalid routes or empty routes
+    if (!is_valid || num_attractions == 0) {
         objectives_ = {
-            10000.0,                               // High cost penalty
-            utils::Config::DAILY_TIME_LIMIT * 2,   // High time penalty
+            1000.0,                               // High cost penalty
+            utils::Config::DAILY_TIME_LIMIT,      // Excessive time penalty
             -1.0                                  // Few attractions penalty
         };
     } else {
@@ -64,33 +64,43 @@ void NSGA2Base::Individual::evaluate(const NSGA2Base& algorithm) {
             time_penalty = violation * (1.0 + violation / max_time);
         }
         
-        // Set objectives: cost to minimize, time to minimize, -attractions to minimize
-        // (negative for attractions because we want to maximize them)
+        // Set objectives with accurate cost calculation
         objectives_ = {
-            total_cost,
-            total_time + time_penalty,
-            -static_cast<double>(num_attractions)
+            total_cost,                           // Minimize cost
+            total_time + time_penalty,            // Minimize time
+            -static_cast<double>(num_attractions) // Maximize attractions (negative for minimization)
         };
     }
 }
 
 bool NSGA2Base::Individual::dominates(const Individual& other) const {
+    // According to Deb's paper Section III:
     // A solution i is said to dominate solution j if:
     // 1) Solution i is no worse than j in all objectives
     // 2) Solution i is strictly better than j in at least one objective
     
     const auto& other_obj = other.getObjectives();
     
-    // Check if any objective is worse (cannot dominate in that case)
+    // Check dominance in all objectives
     bool at_least_one_better = false;
     
     for (size_t i = 0; i < objectives_.size(); ++i) {
-        if (objectives_[i] > other_obj[i]) {
-            // For all objectives, lower is better (even attractions which is negated)
-            return false;  // Not dominating
-        }
-        if (objectives_[i] < other_obj[i]) {
-            at_least_one_better = true;
+        if (i == 2) {
+            // For attractions (objective 2, negated), lower is better (maximizing original value)
+            if (objectives_[i] > other_obj[i]) {
+                return false;  // Solution i is worse in this objective
+            }
+            if (objectives_[i] < other_obj[i]) {
+                at_least_one_better = true;
+            }
+        } else {
+            // For cost and time (objectives 0 and 1), lower is better (minimizing)
+            if (objectives_[i] > other_obj[i]) {
+                return false;  // Solution i is worse in this objective
+            }
+            if (objectives_[i] < other_obj[i]) {
+                at_least_one_better = true;
+            }
         }
     }
     
@@ -102,24 +112,6 @@ void NSGA2Base::Individual::determineTransportModes(const NSGA2Base& algorithm) 
     
     // Initialize transport modes
     transport_modes_.resize(chromosome_.size() - 1);
-    
-    // Create a map for normalized attraction names
-    static std::unordered_map<std::string, std::string> normalized_names;
-    if (normalized_names.empty()) {
-        // Pre-compute normalized names for all attractions
-        for (const auto& attr : algorithm.attractions_) {
-            std::string name = attr.getName();
-            std::string normalized = name;
-            
-            // Remove accents and special characters (simplistic approach)
-            std::transform(normalized.begin(), normalized.end(), normalized.begin(), 
-                          [](unsigned char c) { 
-                              return (c >= 128 || c < 32) ? '_' : std::tolower(c); 
-                          });
-            
-            normalized_names[name] = normalized;
-        }
-    }
     
     // Determine optimal mode for each segment
     for (size_t i = 0; i < chromosome_.size() - 1; ++i) {
@@ -187,7 +179,7 @@ Route NSGA2Base::Individual::constructRoute(const NSGA2Base& algorithm) const {
             }
         }
     } catch (const std::exception&) {
-        // Silently handle errors
+        // Handle error silently
     }
     
     return route;
@@ -210,55 +202,6 @@ NSGA2Base::NSGA2Base(const std::vector<Attraction>& attractions, Parameters para
     if (!utils::TransportMatrices::matrices_loaded) {
         throw std::runtime_error("Transport matrices must be loaded before initializing NSGA-II");
     }
-    
-    // Create compatibility mapping for attraction names
-    // This helps when the matrix and attraction names don't match exactly
-    createAttractionMapping();
-}
-
-void NSGA2Base::createAttractionMapping() {
-    // This function creates a mapping between attraction names used in the algorithm
-    // and attraction names used in the transport matrices
-    
-    // Get all attraction names from matrix
-    const auto& matrix_names = utils::TransportMatrices::attraction_names;
-    
-    // Create normalized versions of attraction names
-    std::unordered_map<std::string, std::string> normalized_matrix_names;
-    for (const auto& name : matrix_names) {
-        std::string normalized = name;
-        std::transform(normalized.begin(), normalized.end(), normalized.begin(), 
-                      [](unsigned char c) { 
-                          return (c >= 128 || c < 32) ? '_' : std::tolower(c); 
-                      });
-        normalized_matrix_names[normalized] = name;
-    }
-    
-    // Try to map attraction names to matrix names
-    for (const auto& attr : attractions_) {
-        std::string name = attr.getName();
-        std::string normalized = name;
-        
-        std::transform(normalized.begin(), normalized.end(), normalized.begin(), 
-                      [](unsigned char c) { 
-                          return (c >= 128 || c < 32) ? '_' : std::tolower(c); 
-                      });
-        
-        // Try to find a match
-        if (normalized_matrix_names.find(normalized) != normalized_matrix_names.end()) {
-            // Perfect match found
-            continue;
-        }
-        
-        // Try fuzzy matching
-        for (const auto& [norm_name, matrix_name] : normalized_matrix_names) {
-            if (norm_name.find(normalized) != std::string::npos || 
-                normalized.find(norm_name) != std::string::npos) {
-                std::cout << "Found fuzzy match: '" << name << "' -> '" << matrix_name << "'" << std::endl;
-                break;
-            }
-        }
-    }
 }
 
 void NSGA2Base::initializePopulation() {
@@ -274,18 +217,18 @@ void NSGA2Base::initializePopulation() {
         // Determine chromosome size - create diversity in initial population
         size_t chrom_size;
         if (i < params_.population_size / 3) {
-            // First third: larger chromosomes
-            chrom_size = std::min(size_t(6), attractions_.size()); // Limit to 6 attractions max
+            // First third: full-sized chromosomes
+            chrom_size = std::min(size_t(8), attractions_.size()); // Limit to 8 attractions max
         } else if (i < params_.population_size * 2 / 3) {
             // Middle third: medium-sized chromosomes
             std::uniform_int_distribution<size_t> dist(
                 std::min(size_t(3), attractions_.size() / 2), 
-                std::min(size_t(5), attractions_.size()));
+                std::min(size_t(6), attractions_.size()));
             chrom_size = dist(rng_);
         } else {
             // Last third: small-sized chromosomes
             std::uniform_int_distribution<size_t> dist(1, 
-                std::min(size_t(3), attractions_.size() / 2));
+                std::min(size_t(4), attractions_.size() / 2));
             chrom_size = dist(rng_);
         }
         
@@ -311,7 +254,6 @@ void NSGA2Base::initializePopulation() {
 }
 
 void NSGA2Base::evaluatePopulation(Population& pop) {
-    // Use parallelism if available
     for (auto& ind : pop) {
         ind->evaluate(*this);
     }
@@ -322,19 +264,16 @@ void NSGA2Base::evaluatePopulation(Population& pop) {
 std::vector<NSGA2Base::Front> NSGA2Base::fastNonDominatedSort(const Population& pop) const {
     std::vector<Front> fronts;
     
-    // Initialize the data structures as described in the paper
+    // Initialize data structures as per Fig. 1 in Deb's paper
     std::vector<std::vector<size_t>> S(pop.size());  // S_p = set of solutions dominated by p
-    std::vector<size_t> n(pop.size(), 0);            // n_p = domination counter (number of solutions that dominate p)
+    std::vector<size_t> n(pop.size(), 0);            // n_p = domination counter (solutions that dominate p)
     
-    // First front
-    Front first_front;
-    
-    // Step 1: For each p in P  (First for-loop in the pseudocode)
+    // For each p in P
     for (size_t p = 0; p < pop.size(); ++p) {
         S[p].clear();
         n[p] = 0;
         
-        // For each q in P  (Second for-loop in the pseudocode)
+        // For each q in P
         for (size_t q = 0; q < pop.size(); ++q) {
             if (p == q) continue;
             
@@ -353,31 +292,29 @@ std::vector<NSGA2Base::Front> NSGA2Base::fastNonDominatedSort(const Population& 
         // If no one dominates p, p belongs to the first front
         if (n[p] == 0) {
             pop[p]->setRank(0);  // First front has rank 0
-            first_front.push_back(pop[p]);
+            if (fronts.empty()) {
+                fronts.push_back(Front());
+            }
+            fronts[0].push_back(pop[p]);
         }
     }
     
-    // Add the first front to the list of fronts
-    fronts.push_back(first_front);
-    
-    // Step 2: Initialize front counter
+    // Generate subsequent fronts
     size_t i = 0;
-    
-    // Step 3: While F_i is not empty
     while (i < fronts.size()) {
-        Front next_front;  // Used to store the next front
+        Front next_front;
         
         // For each p in F_i
         for (const auto& p : fronts[i]) {
             size_t p_idx = std::distance(pop.begin(), 
-                                        std::find(pop.begin(), pop.end(), p));
+                                      std::find(pop.begin(), pop.end(), p));
             
             // For each q in S_p (solutions dominated by p)
             for (size_t q : S[p_idx]) {
-                // Decrement the domination counter
+                // Decrement domination counter
                 n[q]--;
                 
-                // If domination counter becomes zero, q belongs to the next front
+                // If domination counter becomes 0, add to next front
                 if (n[q] == 0) {
                     pop[q]->setRank(i + 1);
                     next_front.push_back(pop[q]);
@@ -385,12 +322,12 @@ std::vector<NSGA2Base::Front> NSGA2Base::fastNonDominatedSort(const Population& 
             }
         }
         
-        // If no more solutions in the next front, we're done
+        // If next front is empty, we're done
         if (next_front.empty()) {
             break;
         }
         
-        // Add the next front to the list of fronts
+        // Add next front
         fronts.push_back(next_front);
         
         // Increment front counter
@@ -524,7 +461,7 @@ NSGA2Base::IndividualPtr NSGA2Base::crossover(const IndividualPtr& parent1, cons
     
     // Determine child size (between min and max parent sizes, but limit max size)
     size_t min_size = std::min(p1_chrom.size(), p2_chrom.size());
-    size_t max_size = std::min(size_t(6), std::max(p1_chrom.size(), p2_chrom.size()));
+    size_t max_size = std::min(size_t(8), std::max(p1_chrom.size(), p2_chrom.size()));
     std::uniform_int_distribution<size_t> size_dist(min_size, max_size);
     size_t child_size = size_dist(rng_);
     
@@ -659,7 +596,7 @@ void NSGA2Base::mutate(IndividualPtr individual) {
             // Add/Remove Mutation: Add or remove an attraction
             std::uniform_real_distribution<> prob_dist(0.0, 1.0);
             
-            if (chrom.size() < std::min(size_t(6), attractions_.size()) && prob_dist(rng_) < 0.5) {
+            if (chrom.size() < std::min(size_t(8), attractions_.size()) && prob_dist(rng_) < 0.5) {
                 // Add a new attraction
                 
                 // Find attractions not already in the chromosome
@@ -737,203 +674,207 @@ NSGA2Base::Population NSGA2Base::selectNextGeneration(const Population& parents,
     if (next_gen.size() < params_.population_size && i < fronts.size()) {
         // Calculate crowding distance in Fi
         calculateCrowdingDistances(fronts[i]);
-
-// Sort Fi by crowded comparison operator
-std::sort(fronts[i].begin(), fronts[i].end(), 
-[](const IndividualPtr& a, const IndividualPtr& b) {
-    // Higher crowding distance is better for same rank
-    return a->getCrowdingDistance() > b->getCrowdingDistance();
-});
-
-// Add solutions from Fi to Pt+1 until |Pt+1| = N
-size_t remaining = params_.population_size - next_gen.size();
-next_gen.insert(next_gen.end(), fronts[i].begin(), 
-     fronts[i].begin() + std::min(remaining, fronts[i].size()));
-}
-
-return next_gen;
+        
+        // Sort Fi by crowded comparison operator
+        std::sort(fronts[i].begin(), fronts[i].end(), 
+                 [](const IndividualPtr& a, const IndividualPtr& b) {
+                     // Higher crowding distance is better for same rank
+                     return a->getCrowdingDistance() > b->getCrowdingDistance();
+                 });
+        
+        // Add solutions from Fi to Pt+1 until |Pt+1| = N
+        size_t remaining = params_.population_size - next_gen.size();
+        next_gen.insert(next_gen.end(), fronts[i].begin(), 
+                      fronts[i].begin() + std::min(remaining, fronts[i].size()));
+    }
+    
+    return next_gen;
 }
 
 std::vector<Solution> NSGA2Base::run() {
-// Create file for tracking generations data
-std::ofstream generations_file("geracoes_nsga2_base.csv", std::ios::out);
-if (generations_file.is_open()) {
-generations_file << "Generation;Front size;Best Cost;Best Time;Max Attractions" << std::endl;
-}
-
-// Initialize population
-initializePopulation();
-
-// Main NSGA-II loop - evolve for max_generations
-for (size_t gen = 0; gen < params_.max_generations; ++gen) {
-// Create offspring through selection, crossover, and mutation
-Population offspring = createOffspring(population_);
-
-// Select next generation from combined parent and offspring populations
-population_ = selectNextGeneration(population_, offspring);
-
-// Calculate non-dominated fronts for the new population
-auto fronts = fastNonDominatedSort(population_);
-
-// Log progress
-logProgress(gen, fronts);
-
-// Record generation data for first front
-if (generations_file.is_open() && !fronts.empty() && !fronts[0].empty()) {
-// Find best values for each objective in the first front
-double best_cost = std::numeric_limits<double>::max();
-double best_time = std::numeric_limits<double>::max();
-double max_attractions = 0;
-
-// Flag to track if we found valid solutions
-bool found_valid = false;
-
-for (const auto& ind : fronts[0]) {
-const auto& obj = ind->getObjectives();
-Route test_route = ind->constructRoute(*this);
-
-// Check if values are valid (not penalty values) and route is valid
-if (obj[0] < 1000.0 && obj[1] < utils::Config::DAILY_TIME_LIMIT && 
-   test_route.isValid() && !test_route.getAttractions().empty()) {
-   found_valid = true;
-   best_cost = std::min(best_cost, obj[0]);
-   best_time = std::min(best_time, obj[1]);
-   max_attractions = std::max(max_attractions, -obj[2]); // Negate to get actual number
-}
-}
-
-// Only write if we found at least one valid solution
-if (found_valid) {
-generations_file << gen << ";" 
-         << fronts[0].size() << ";" 
-         << best_cost << ";" 
-         << best_time << ";" 
-         << max_attractions << std::endl;
-}
-}
-}
-
-// Find non-dominated solutions in final population
-auto final_fronts = fastNonDominatedSort(population_);
-std::vector<Solution> solutions;
-
-// Convert individuals in the first front to Solution objects
-if (!final_fronts.empty()) {
-solutions.reserve(final_fronts[0].size());
-
-// First, deduplicate similar solutions
-std::unordered_set<std::string> solution_hashes;
-
-for (const auto& ind : final_fronts[0]) {
-Route route = ind->constructRoute(*this);
-
-// Only add valid routes with at least one attraction
-if (!route.getAttractions().empty() && route.isValid()) {
-// Create a hash based on the sequence of attractions
-std::string hash;
-std::string reverse_hash;
-
-const auto& attractions = route.getAttractions();
-
-// Forward hash
-for (const auto* attr : attractions) {
-   hash += attr->getName() + "|";
-}
-
-// Reverse hash (to detect inverted routes)
-for (auto it = attractions.rbegin(); it != attractions.rend(); ++it) {
-   reverse_hash += (*it)->getName() + "|";
-}
-
-// Only add if neither this solution nor its reverse already exists
-if (solution_hashes.find(hash) == solution_hashes.end() && 
-   solution_hashes.find(reverse_hash) == solution_hashes.end()) {
-   solutions.push_back(Solution(route));
-   solution_hashes.insert(hash);
-   solution_hashes.insert(reverse_hash); // Also prevent reverse from being added later
-}
-}
-}
-}
-
-// Sort solutions by diversity - make sure we have a diverse set
-if (solutions.size() > 1) {
-std::sort(solutions.begin(), solutions.end(),
-[](const Solution& a, const Solution& b) {
-    const auto& obj_a = a.getObjectives();
-    const auto& obj_b = b.getObjectives();
-    
-    // First by number of attractions (descending)
-    if (obj_a[2] != obj_b[2]) {
-        return obj_a[2] < obj_b[2]; // More negative = more attractions
+    // Create file for tracking generations data
+    std::ofstream generations_file("geracoes_nsga2_base.csv", std::ios::out);
+    if (generations_file.is_open()) {
+        generations_file << "Generation;Front size;Best Cost;Best Time;Max Attractions" << std::endl;
     }
     
-    // Then by cost (ascending)
-    if (std::abs(obj_a[0] - obj_b[0]) > 1e-6) {
-        return obj_a[0] < obj_b[0];
+    // Initialize population
+    initializePopulation();
+    
+    // Main NSGA-II loop - evolve for max_generations
+    for (size_t gen = 0; gen < params_.max_generations; ++gen) {
+        // Create offspring through selection, crossover, and mutation
+        Population offspring = createOffspring(population_);
+        
+        // Select next generation from combined parent and offspring populations
+        population_ = selectNextGeneration(population_, offspring);
+        
+        // Calculate non-dominated fronts for the new population
+        auto fronts = fastNonDominatedSort(population_);
+        
+        // Log progress
+        logProgress(gen, fronts);
+        
+        // Record generation data for first front
+        if (generations_file.is_open() && !fronts.empty() && !fronts[0].empty()) {
+            // Find best values for each objective in the first front
+            double best_cost = std::numeric_limits<double>::max();
+            double best_time = std::numeric_limits<double>::max();
+            double max_attractions = 0;
+            
+            // Flag to track if we found valid solutions
+            bool found_valid = false;
+            
+            for (const auto& ind : fronts[0]) {
+                const auto& obj = ind->getObjectives();
+                Route test_route = ind->constructRoute(*this);
+                
+                // Check if values are valid (not penalty values) and route is valid
+                if (obj[0] < 999.0 && obj[1] < utils::Config::DAILY_TIME_LIMIT && 
+                    test_route.isValid() && !test_route.getAttractions().empty()) {
+                    found_valid = true;
+                    best_cost = std::min(best_cost, obj[0]);
+                    best_time = std::min(best_time, obj[1]);
+                    max_attractions = std::max(max_attractions, -obj[2]); // Negate to get actual number
+                }
+            }
+            
+            // Only write if we found at least one valid solution
+            if (found_valid) {
+                generations_file << gen << ";" 
+                                << fronts[0].size() << ";" 
+                                << best_cost << ";" 
+                                << best_time << ";"
+                                << max_attractions << std::endl;
+            }
+        }
     }
     
-    // Then by time (ascending)
-    return obj_a[1] < obj_b[1];
-});
-}
-
-if (generations_file.is_open()) {
-generations_file.close();
-}
-
-return solutions;
+    // Find non-dominated solutions in final population
+    auto final_fronts = fastNonDominatedSort(population_);
+    std::vector<Solution> solutions;
+    
+    // Convert individuals in the first front to Solution objects
+    if (!final_fronts.empty()) {
+        solutions.reserve(final_fronts[0].size());
+        
+        // First, deduplicate similar solutions
+        std::unordered_set<std::string> solution_hashes;
+        
+        for (const auto& ind : final_fronts[0]) {
+            Route route = ind->constructRoute(*this);
+            
+            // Only add valid routes with at least one attraction
+            if (!route.getAttractions().empty() && route.isValid()) {
+                // Create a hash based on the sequence of attractions
+                std::string hash;
+                std::string reverse_hash;
+                
+                const auto& attractions = route.getAttractions();
+                
+                // Forward hash
+                for (const auto* attr : attractions) {
+                    hash += attr->getName() + "|";
+                }
+                
+                // Reverse hash (to detect inverted routes)
+                for (auto it = attractions.rbegin(); it != attractions.rend(); ++it) {
+                    reverse_hash += (*it)->getName() + "|";
+                }
+                
+                // Only add if neither this solution nor its reverse already exists
+                if (solution_hashes.find(hash) == solution_hashes.end() && 
+                    solution_hashes.find(reverse_hash) == solution_hashes.end()) {
+                    solutions.push_back(Solution(route));
+                    solution_hashes.insert(hash);
+                    solution_hashes.insert(reverse_hash); // Also prevent reverse from being added later
+                }
+            }
+        }
+    }
+    
+    // Sort solutions by diversity - make sure we have a diverse set
+    if (solutions.size() > 1) {
+        std::sort(solutions.begin(), solutions.end(),
+                 [](const Solution& a, const Solution& b) {
+                     const auto& obj_a = a.getObjectives();
+                     const auto& obj_b = b.getObjectives();
+                     
+                     // First by number of attractions (descending)
+                     if (obj_a[2] != obj_b[2]) {
+                         return obj_a[2] < obj_b[2]; // More negative = more attractions
+                     }
+                     
+                     // Then by cost (ascending)
+                     if (std::abs(obj_a[0] - obj_b[0]) > 1e-6) {
+                         return obj_a[0] < obj_b[0];
+                     }
+                     
+                     // Then by time (ascending)
+                     return obj_a[1] < obj_b[1];
+                 });
+    }
+    
+    if (generations_file.is_open()) {
+        generations_file.close();
+    }
+    
+    return solutions;
 }
 
 void NSGA2Base::logProgress(size_t generation, const std::vector<Front>& fronts) const {
-if (!fronts.empty()) {
-std::cout << "Generation " << generation 
-<< ": Front size = " << fronts[0].size();
-
-// Find the solution with the most attractions (lowest value for obj[2])
-if (!fronts[0].empty()) {
-double best_cost = std::numeric_limits<double>::max();
-double best_time = std::numeric_limits<double>::max();
-double max_attractions = 0;
-bool found_valid = false;
-
-for (const auto& ind : fronts[0]) {
-const auto& obj = ind->getObjectives();
-Route test_route = ind->constructRoute(*this);
-
-// Only consider valid, non-empty routes
-if (obj[0] < 1000.0 && obj[1] < utils::Config::DAILY_TIME_LIMIT && 
-   test_route.isValid() && !test_route.getAttractions().empty()) {
-   found_valid = true;
-   best_cost = std::min(best_cost, obj[0]);
-   best_time = std::min(best_time, obj[1]);
-   max_attractions = std::max(max_attractions, -obj[2]); // Negate to get actual number
-}
-}
-
-// Only display valid solutions
-if (found_valid) {
-std::cout << ", Best solution: [Cost=" << best_cost 
-       << ", Time=" << best_time 
-       << ", Attractions=" << max_attractions << "]";
-} else {
-std::cout << ", No valid solutions yet";
-}
-}
-
-std::cout << std::endl;
-}
+    if (!fronts.empty()) {
+        std::cout << "Generation " << generation 
+                << ": Front size = " << fronts[0].size();
+        
+        // Find best solution values
+        if (!fronts[0].empty()) {
+            double best_cost = std::numeric_limits<double>::max();
+            double best_time = std::numeric_limits<double>::max();
+            double max_attractions = 0;
+            bool found_valid = false;
+            
+            for (const auto& ind : fronts[0]) {
+                // Calculate REAL values by constructing the route
+                Route test_route = ind->constructRoute(*this);
+                
+                if (test_route.isValid() && !test_route.getAttractions().empty()) {
+                    found_valid = true;
+                    
+                    // Use actual route values, not objective values
+                    double actual_cost = test_route.getTotalCost();
+                    double actual_time = test_route.getTotalTime();
+                    int actual_attractions = test_route.getNumAttractions();
+                    
+                    best_cost = std::min(best_cost, actual_cost);
+                    best_time = std::min(best_time, actual_time);
+                    max_attractions = std::max(max_attractions, static_cast<double>(actual_attractions));
+                }
+            }
+            
+            // Only display valid solutions
+            if (found_valid) {
+                std::cout << ", Best solution: [Cost=" << std::fixed << std::setprecision(2) << best_cost 
+                        << ", Time=" << std::fixed << std::setprecision(1) << best_time 
+                        << ", Attractions=" << static_cast<int>(max_attractions) << "]";
+            } else {
+                std::cout << ", No valid solutions yet";
+            }
+        }
+        
+        std::cout << std::endl;
+    }
 }
 
 // Crowded comparison operator (Section III-B)
 bool NSGA2Base::compareByRankAndCrowding(const IndividualPtr& a, const IndividualPtr& b) {
-// If ranks are different, return the one with lower rank
-if (a->getRank() != b->getRank()) {
-return a->getRank() < b->getRank();
+    // If ranks are different, return the one with lower rank
+    if (a->getRank() != b->getRank()) {
+        return a->getRank() < b->getRank();
+    }
+    
+    // If ranks are the same, return the one with higher crowding distance
+    return a->getCrowdingDistance() > b->getCrowdingDistance();
 }
 
-// If ranks are the same, return the one with higher crowding distance
-return a->getCrowdingDistance() > b->getCrowdingDistance();
-}
-
-} // namespace tourist        
+} // namespace tourist

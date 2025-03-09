@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <cctype>
+#include <unordered_map>
 
 namespace tourist {
 namespace utils {
@@ -22,8 +24,156 @@ std::unordered_map<std::string, size_t> TransportMatrices::attraction_indices;
 std::vector<std::string> TransportMatrices::attraction_names;
 bool TransportMatrices::matrices_loaded = false;
 
+// Mapa para normalização de nomes de atrações
+static std::unordered_map<std::string, std::string> attraction_name_mapping;
+
+// Função para normalizar strings (remover acentos, espaços extras, etc.)
+std::string normalizeString(const std::string& str) {
+    std::string result = str;
+    
+    // Converter para minúsculas
+    std::transform(result.begin(), result.end(), result.begin(), 
+                  [](unsigned char c) { return std::tolower(c); });
+    
+    // Remover caracteres não alfanuméricos e substituir por espaços
+    for (auto& c : result) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != ' ') {
+            c = ' ';
+        }
+    }
+    
+    // Remover espaços múltiplos
+    auto newEnd = std::unique(result.begin(), result.end(),
+                             [](char a, char b) {
+                                 return a == ' ' && b == ' ';
+                             });
+    result.erase(newEnd, result.end());
+    
+    // Trim espaços no início e fim
+    if (!result.empty()) {
+        size_t start = result.find_first_not_of(' ');
+        if (start != std::string::npos) {
+            size_t end = result.find_last_not_of(' ');
+            result = result.substr(start, end - start + 1);
+        } else {
+            result = "";
+        }
+    }
+    
+    return result;
+}
+
+// Função auxiliar para criar o mapeamento de nomes
+void createAttractionNameMapping() {
+    if (!TransportMatrices::matrices_loaded) {
+        std::cerr << "Erro: matrizes de transporte não carregadas antes de criar mapeamento." << std::endl;
+        return;
+    }
+    
+    // Limpar mapeamento existente
+    attraction_name_mapping.clear();
+    
+    std::cout << "Criando mapeamento de nomes de atrações..." << std::endl;
+    
+    // Criar mapeamento para cada atração nas matrizes
+    for (const auto& name : TransportMatrices::attraction_names) {
+        std::string normalized = normalizeString(name);
+        attraction_name_mapping[normalized] = name;
+        
+        // Também adicionar versão sem espaços
+        std::string no_spaces = normalized;
+        no_spaces.erase(std::remove(no_spaces.begin(), no_spaces.end(), ' '), no_spaces.end());
+        attraction_name_mapping[no_spaces] = name;
+    }
+    
+    std::cout << "Mapeamento de nomes criado: " << attraction_name_mapping.size() << " entradas." << std::endl;
+}
+
+// Função para encontrar o nome correspondente na matriz
+std::string findMatrixName(const std::string& original_name) {
+    static bool mapping_created = false;
+    
+    // Create the mapping on the first call
+    if (!mapping_created && TransportMatrices::matrices_loaded) {
+        createAttractionNameMapping();
+        mapping_created = true;
+    }
+    
+    // Direct manual mappings for problematic attractions
+    static const std::unordered_map<std::string, std::string> manual_mappings = {
+        {"Museu do Amanhã", "Museu do Amanh"},
+        {"Escadaria Selarón", "Escadaria Selaron"},
+        {"Pedra da Gávea", "Pedra da Gavea"},
+        {"Pedra do Telégrafo", "Pedra do Telegrafo"},
+        {"Morro Dois Irmãos", "Morro Dois Irmaos"},
+        {"Mosteiro De São Bento", "Mosteiro De Sao Bento"},
+        {"Real Gabinete Português Da Leitura", "Real Gabinete Portugues Da Leitura"},
+        {"Centro Cultural Jerusalém", "Centro Cultural Jerusalem"},
+        {"Ilha Da Gigóia", "Ilha Da Gigoia"}
+    };
+    
+    // Check for direct manual mapping first (without logs)
+    auto it = manual_mappings.find(original_name);
+    if (it != manual_mappings.end()) {
+        return it->second;
+    }
+    
+    // Normalize the original name
+    std::string normalized = normalizeString(original_name);
+    
+    // Check for direct match (without logs)
+    if (attraction_name_mapping.find(normalized) != attraction_name_mapping.end()) {
+        return attraction_name_mapping[normalized];
+    }
+    
+    // Try version without spaces
+    std::string no_spaces = normalized;
+    no_spaces.erase(std::remove(no_spaces.begin(), no_spaces.end(), ' '), no_spaces.end());
+    if (attraction_name_mapping.find(no_spaces) != attraction_name_mapping.end()) {
+        return attraction_name_mapping[no_spaces];
+    }
+    
+    // Try fuzzy matching - find the best partial match
+    std::string best_match;
+    size_t best_score = 0;
+    
+    for (const auto& [norm_name, matrix_name] : attraction_name_mapping) {
+        // Calculate a simple matching score
+        size_t len1 = norm_name.length();
+        size_t len2 = normalized.length();
+        size_t common_len = 0;
+        
+        for (size_t i = 0; i < std::min(len1, len2); ++i) {
+            if (i < len1 && i < len2 && norm_name[i] == normalized[i]) {
+                common_len++;
+            }
+        }
+        
+        size_t score = (common_len * 100) / std::max(len1, len2);
+        
+        if (score > best_score && score > 60) {  // Require at least 60% match
+            best_score = score;
+            best_match = matrix_name;
+        }
+    }
+    
+    if (!best_match.empty()) {
+        return best_match;
+    }
+    
+    // No match found
+    return original_name;
+}
+
 // Função auxiliar para normalizar nomes (trim e remover caracteres especiais)
 std::string normalizeAttractionName(const std::string& name) {
+    // Primeiro tenta encontrar o nome correspondente na matriz
+    std::string matrix_name = findMatrixName(name);
+    if (matrix_name != name) {
+        return matrix_name;  // Se encontrou uma correspondência, use-a
+    }
+    
+    // Caso contrário, use a normalização simples original
     std::string normalized = name;
     // Trim whitespace
     normalized.erase(0, normalized.find_first_not_of(" \t\r\n"));
@@ -62,10 +212,6 @@ double Transport::getDistance(const std::string& from, const std::string& to, Tr
         // Debug: imprimir nomes disponíveis
         if (from_it == TransportMatrices::attraction_indices.end()) {
             std::cerr << "Atração não encontrada: '" << from_normalized << "'" << std::endl;
-            std::cerr << "Nomes disponíveis:" << std::endl;
-            for (const auto& pair : TransportMatrices::attraction_indices) {
-                std::cerr << "  '" << pair.first << "'" << std::endl;
-            }
         }
     }
     
@@ -78,14 +224,10 @@ double Transport::getDistance(const std::string& from, const std::string& to, Tr
     
     if (from_it == TransportMatrices::attraction_indices.end() || 
         to_it == TransportMatrices::attraction_indices.end()) {
-        std::string error_msg = "Attraction not found in transport matrices:";
-        if (from_it == TransportMatrices::attraction_indices.end()) {
-            error_msg += " '" + from_normalized + "'";
-        }
-        if (to_it == TransportMatrices::attraction_indices.end()) {
-            error_msg += " '" + to_normalized + "'";
-        }
-        throw std::runtime_error(error_msg);
+        // Gerar valor de distância padrão alto para penalizar rotas com atrações ausentes
+        // Em vez de lançar exceção, retornamos um valor alto
+        double penalty_distance = 20000.0;  // 20 km de penalidade
+        return penalty_distance;
     }
     
     size_t from_idx = from_it->second;
@@ -94,7 +236,8 @@ double Transport::getDistance(const std::string& from, const std::string& to, Tr
     // Verificar limites para evitar acesso inválido
     if (from_idx >= TransportMatrices::car_distances.size() ||
         to_idx >= TransportMatrices::car_distances[from_idx].size()) {
-        throw std::runtime_error("Index out of range in distance matrix");
+        double penalty_distance = 20000.0;  // 20 km de penalidade
+        return penalty_distance;
     }
     
     if (mode == TransportMode::WALK) {
@@ -133,14 +276,9 @@ double Transport::getTravelTime(const std::string& from, const std::string& to, 
     
     if (from_it == TransportMatrices::attraction_indices.end() || 
         to_it == TransportMatrices::attraction_indices.end()) {
-        std::string error_msg = "Attraction not found in transport matrices:";
-        if (from_it == TransportMatrices::attraction_indices.end()) {
-            error_msg += " '" + from_normalized + "'";
-        }
-        if (to_it == TransportMatrices::attraction_indices.end()) {
-            error_msg += " '" + to_normalized + "'";
-        }
-        throw std::runtime_error(error_msg);
+        // Retornar valor de tempo alto como penalidade
+        double penalty_time = 60.0;  // 60 minutos como penalidade
+        return penalty_time;
     }
     
     size_t from_idx = from_it->second;
@@ -149,7 +287,8 @@ double Transport::getTravelTime(const std::string& from, const std::string& to, 
     // Verificar limites para evitar acesso inválido
     if (from_idx >= TransportMatrices::car_times.size() ||
         to_idx >= TransportMatrices::car_times[from_idx].size()) {
-        throw std::runtime_error("Index out of range in time matrix");
+        double penalty_time = 60.0;  // 60 minutos como penalidade
+        return penalty_time;
     }
     
     if (mode == TransportMode::WALK) {
@@ -169,9 +308,8 @@ double Transport::getTravelCost(const std::string& from, const std::string& to, 
             double distance_km = distance_m / 1000.0;
             return distance_km * Config::COST_CAR_PER_KM;
         } catch (const std::exception& e) {
-            std::cerr << "Erro ao calcular custo de transporte: " << e.what() << std::endl;
-            // Retornar um valor estimado para não bloquear a execução
-            return 30.0; // R$30 como valor padrão
+            // Retornar um valor de penalidade para não bloquear a execução
+            return 100.0; // R$100 como penalidade
         }
     }
 }
@@ -186,7 +324,6 @@ TransportMode Transport::determinePreferredMode(const std::string& from, const s
             return TransportMode::CAR;
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error determining transport mode: " << e.what() << std::endl;
         // Em caso de erro, usar o modo padrão
         return TransportMode::CAR;
     }
@@ -274,20 +411,30 @@ std::vector<Attraction> Parser::loadAttractions(const std::string& filename) {
         if (line.empty() || line[0] == '#') continue;
         
         auto parts = split(line, ';');
-        if (parts.size() != 6) {
-            throw std::runtime_error("Invalid attraction data format");
+        if (parts.size() < 6) {
+            std::cerr << "Aviso: Linha com formato inválido ignorada: " << line << std::endl;
+            continue;
         }
         
-        auto coords = parseCoordinates(parts[1]);
-        attractions.emplace_back(
-            parts[0],                      // nome
-            coords.first,                  // latitude
-            coords.second,                 // longitude
-            std::stoi(parts[2]),          // tempo de visita
-            std::stod(parts[3]),          // custo
-            std::stoi(parts[4]),          // horário abertura
-            std::stoi(parts[5])           // horário fechamento
-        );
+        try {
+            auto coords = parseCoordinates(parts[1]);
+            int visitTime = std::stoi(parts[2]);
+            double cost = std::stod(parts[3]);
+            int openingTime = std::stoi(parts[4]);
+            int closingTime = std::stoi(parts[5]);
+            
+            attractions.emplace_back(
+                parts[0],                      // nome
+                coords.first,                  // latitude
+                coords.second,                 // longitude
+                visitTime,                     // tempo de visita
+                cost,                          // custo
+                openingTime,                   // horário abertura
+                closingTime                    // horário fechamento
+            );
+        } catch (const std::exception& e) {
+            std::cerr << "Erro ao processar atração: " << e.what() << std::endl;
+        }
     }
     
     return attractions;
@@ -377,6 +524,10 @@ bool Parser::loadTransportMatrices(const std::string& car_distances_file,
         
         // Guardar status de carregamento
         TransportMatrices::matrices_loaded = true;
+        
+        // Criar mapeamento de atrações
+        createAttractionNameMapping();
+        
         return true;
     } catch (const std::exception& e) {
         std::cerr << "Error loading matrices: " << e.what() << std::endl;

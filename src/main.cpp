@@ -1,4 +1,4 @@
-#include "nsga2.hpp"
+#include "nsga2-base.hpp"
 #include "utils.hpp"
 #include <iostream>
 #include <fstream>
@@ -6,6 +6,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <filesystem>
 
 using namespace tourist;
@@ -171,6 +172,7 @@ int main() {
         const std::string walk_dist_file = osrm_path + "matriz_distancias_pe_metros_2025-03-07_17-03-54.csv";
         const std::string car_time_file = osrm_path + "matriz_tempos_carro_min_2025-03-07_17-03-54.csv";
         const std::string walk_time_file = osrm_path + "matriz_tempos_pe_min_2025-03-07_17-03-54.csv";
+        
         // Carregar as matrizes de distância e tempo
         std::cout << "Carregando matrizes de distância e tempo...\n";
         if (!utils::Parser::loadTransportMatrices(car_dist_file, walk_dist_file, car_time_file, walk_time_file)) {
@@ -184,20 +186,10 @@ int main() {
         if (attractions.empty()) {
             throw std::runtime_error("Nenhuma atração carregada de attractions.txt");
         }
-        std::cout << "Atrações carregadas: " << attractions.size() << "\n";
+        std::cout << "Atrações carregadas: " << attractions.size() << "\n\n";
         
-        // Verificar se todas as atrações estão nas matrizes
-        std::cout << "Verificando compatibilidade de atrações com as matrizes...\n";
-        for (const auto& attraction : attractions) {
-            if (utils::TransportMatrices::attraction_indices.find(attraction.getName()) == 
-                utils::TransportMatrices::attraction_indices.end()) {
-                std::cout << "AVISO: Atração '" << attraction.getName() 
-                          << "' não encontrada nas matrizes de transporte.\n";
-            }
-        }
-        
-        std::cout << "\nConfigurando NSGA-II...\n";
-        NSGA2::Parameters params;
+        std::cout << "Configurando NSGA-II...\n";
+        NSGA2Base::Parameters params;
         params.population_size = 100;
         params.max_generations = 100;
         params.crossover_rate = 0.9;
@@ -220,7 +212,7 @@ int main() {
         std::cout << "Custo de carro: R$ " << utils::Config::COST_CAR_PER_KM << " por km\n\n";
         
         std::cout << "Inicializando NSGA-II...\n";
-        NSGA2 nsga2(attractions, params);
+        NSGA2Base nsga2(attractions, params);
         std::cout << "NSGA-II inicializado com sucesso\n";
         
         std::cout << "Iniciando otimização...\n";
@@ -243,98 +235,30 @@ int main() {
                 return 0;
             }
             
-            double cost_ref = utils::Config::TOLERANCE > 0 
-                ? 10000.0 * (1.0 + utils::Config::TOLERANCE) 
-                : 10000.0;
-            double time_ref = utils::Config::DAILY_TIME_LIMIT * (1.0 + utils::Config::TOLERANCE);
-            std::vector<double> reference_point = {cost_ref, time_ref, 0.0};
-            
-            // Calcular métricas para as soluções finais retornadas
-            const double hypervolume = utils::Metrics::calculateHypervolume(solutions, reference_point);
-            const double spread = utils::Metrics::calculateSpread(solutions);
-            
-            // Exibir métricas da última geração (obtidas do CSV)
-            std::ifstream gen_file("geracoes_nsga2.csv");
-            std::string line;
-            std::string last_gen_line;
-            double last_gen_hv = 0.0;
-            double last_gen_spread = 0.0;
-            int last_gen_num = 0;
-            
-            if (gen_file.is_open()) {
-                // Pular linha de cabeçalho
-                std::getline(gen_file, line);
-                // Ler até a última linha não-vazia antes das métricas finais
-                while (std::getline(gen_file, line)) {
-                    if (line.empty() || line.find("Final metrics") != std::string::npos) {
-                        break;
+            // Ordenar soluções por: 
+            // 1. Número de atrações (decrescente)
+            // 2. Custo (crescente)
+            // 3. Tempo (crescente)
+            std::sort(solutions.begin(), solutions.end(), 
+                [](const Solution& a, const Solution& b) {
+                    const auto& obj_a = a.getObjectives();
+                    const auto& obj_b = b.getObjectives();
+                    
+                    // Primeiro por número de atrações (decrescente)
+                    // -obj[2] porque o objetivo é negativo (queremos maximizar)
+                    if (obj_a[2] != obj_b[2]) {
+                        return obj_a[2] < obj_b[2]; // Menor valor negativo = mais atrações
                     }
-                    last_gen_line = line;
-                }
-                // Processar a última linha de geração
-                if (!last_gen_line.empty()) {
-                    std::stringstream ss(last_gen_line);
-                    std::string token;
-                    std::getline(ss, token, ';'); // Geração
-                    last_gen_num = std::stoi(token);
-                    std::getline(ss, token, ';'); // Tamanho da fronteira
-                    std::getline(ss, token, ';'); // Hipervolume
-                    last_gen_hv = std::stod(token);
-                    std::getline(ss, token, ';'); // Spread
-                    last_gen_spread = std::stod(token);
-                }
-                // Ler métricas finais
-                double best_hv = 0.0;
-                double best_spread = 0.0;
-                int best_gen = 0;
-                while (std::getline(gen_file, line)) {
-                    if (line.find("Final Hypervolume") != std::string::npos) {
-                        std::stringstream ss(line);
-                        std::string token;
-                        std::getline(ss, token, ';'); 
-                        std::getline(ss, token, ';'); 
-                        best_hv = std::stod(token);
-                    } else if (line.find("Final Spread") != std::string::npos) {
-                        std::stringstream ss(line);
-                        std::string token;
-                        std::getline(ss, token, ';'); 
-                        std::getline(ss, token, ';'); 
-                        best_spread = std::stod(token);
+                    
+                    // Em caso de empate, ordenar por custo (crescente)
+                    if (std::abs(obj_a[0] - obj_b[0]) > 1e-6) {
+                        return obj_a[0] < obj_b[0];
                     }
+                    
+                    // Em caso de empate de custo, ordenar por tempo (crescente)
+                    return obj_a[1] < obj_b[1];
                 }
-                // Encontrar qual geração teve o melhor hipervolume
-                gen_file.clear();
-                gen_file.seekg(0, std::ios::beg);
-                // Pular linha de cabeçalho
-                std::getline(gen_file, line);
-                while (std::getline(gen_file, line)) {
-                    if (line.empty() || line.find("Final metrics") != std::string::npos) {
-                        break;
-                    }
-                    std::stringstream ss(line);
-                    std::string token;
-                    std::getline(ss, token, ';');
-                    int gen_num = std::stoi(token);
-                    std::getline(ss, token, ';'); // Tamanho da fronteira
-                    std::getline(ss, token, ';'); // Hipervolume
-                    double hv = std::stod(token);
-                    if (std::abs(hv - best_hv) < 1e-5) {
-                        best_gen = gen_num;
-                        break;
-                    }
-                }
-                std::cout << "=== Métricas da Última Geração (" << last_gen_num << ") ===\n";
-                std::cout << "- Hipervolume: " << std::scientific << std::setprecision(6) << last_gen_hv << "\n";
-                std::cout << "- Spread: " << std::fixed << std::setprecision(6) << last_gen_spread << "\n\n";
-                std::cout << "=== Métricas da Melhor População (Geração " << best_gen << ") ===\n";
-                std::cout << "- Hipervolume: " << std::scientific << std::setprecision(6) << best_hv << "\n";
-                std::cout << "- Spread: " << std::fixed << std::setprecision(6) << best_spread << "\n\n";
-            } else {
-                // Fallback
-                std::cout << "=== Métricas de Qualidade ===\n";
-                std::cout << "- Hipervolume: " << std::fixed << std::setprecision(4) << hypervolume << "\n";
-                std::cout << "- Spread: " << std::fixed << std::setprecision(4) << spread << "\n\n";
-            }
+            );
             
             const size_t num_to_show = std::min(size_t(3), solutions.size());
             std::cout << "=== Melhores Soluções ===\n";
@@ -344,7 +268,7 @@ int main() {
                 printSolution(solutions[i], i);
             }
             
-            const std::string output_file = "resultados_nsga2.csv";
+            const std::string output_file = "resultados_nsga2_base.csv";
             exportResults(solutions, output_file);
             std::cout << "\nResultados detalhados exportados para: " << output_file << "\n";
             

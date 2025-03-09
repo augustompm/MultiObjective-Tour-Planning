@@ -214,29 +214,29 @@ src/models.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/models.cpp.s
 .PHONY : src/models.cpp.s
 
-src/nsga2.o: src/nsga2.cpp.o
-.PHONY : src/nsga2.o
+src/nsga2-base.o: src/nsga2-base.cpp.o
+.PHONY : src/nsga2-base.o
 
 # target to build an object file
-src/nsga2.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/nsga2.cpp.o
-.PHONY : src/nsga2.cpp.o
+src/nsga2-base.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/nsga2-base.cpp.o
+.PHONY : src/nsga2-base.cpp.o
 
-src/nsga2.i: src/nsga2.cpp.i
-.PHONY : src/nsga2.i
+src/nsga2-base.i: src/nsga2-base.cpp.i
+.PHONY : src/nsga2-base.i
 
 # target to preprocess a source file
-src/nsga2.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/nsga2.cpp.i
-.PHONY : src/nsga2.cpp.i
+src/nsga2-base.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/nsga2-base.cpp.i
+.PHONY : src/nsga2-base.cpp.i
 
-src/nsga2.s: src/nsga2.cpp.s
-.PHONY : src/nsga2.s
+src/nsga2-base.s: src/nsga2-base.cpp.s
+.PHONY : src/nsga2-base.s
 
 # target to generate assembly for a file
-src/nsga2.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/nsga2.cpp.s
-.PHONY : src/nsga2.cpp.s
+src/nsga2-base.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/nsga2-base.cpp.s
+.PHONY : src/nsga2-base.cpp.s
 
 src/utils.o: src/utils.cpp.o
 .PHONY : src/utils.o
@@ -281,9 +281,9 @@ help:
 	@echo "... src/models.o"
 	@echo "... src/models.i"
 	@echo "... src/models.s"
-	@echo "... src/nsga2.o"
-	@echo "... src/nsga2.i"
-	@echo "... src/nsga2.s"
+	@echo "... src/nsga2-base.o"
+	@echo "... src/nsga2-base.i"
+	@echo "... src/nsga2-base.s"
 	@echo "... src/utils.o"
 	@echo "... src/utils.i"
 	@echo "... src/utils.s"

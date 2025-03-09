@@ -1,7 +1,7 @@
 CMakeFiles/tourist_route.dir/src/main.cpp.o: \
  /home/augusto/projects/MultiObjective-Tour-Planning/src/main.cpp \
  /usr/include/stdc-predef.h \
- /home/augusto/projects/MultiObjective-Tour-Planning/include/nsga2.hpp \
+ /home/augusto/projects/MultiObjective-Tour-Planning/include/nsga2-base.hpp \
  /home/augusto/projects/MultiObjective-Tour-Planning/include/base.hpp \
  /usr/include/c++/13/vector /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
@@ -199,13 +199,11 @@ CMakeFiles/tourist_route.dir/src/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/c++/13/bits/opt_random.h \
  /usr/include/c++/13/bits/random.tcc /usr/include/c++/13/numeric \
  /usr/include/c++/13/bits/stl_numeric.h \
- /usr/include/c++/13/pstl/glue_numeric_defs.h /usr/include/c++/13/set \
- /usr/include/c++/13/bits/stl_tree.h /usr/include/c++/13/bits/stl_set.h \
- /usr/include/c++/13/bits/stl_multiset.h /usr/include/c++/13/functional \
- /usr/include/c++/13/bits/std_function.h /usr/include/c++/13/array \
- /usr/include/c++/13/compare /usr/include/c++/13/iostream \
- /usr/include/c++/13/ostream /usr/include/c++/13/ios \
- /usr/include/c++/13/bits/ios_base.h \
+ /usr/include/c++/13/pstl/glue_numeric_defs.h \
+ /usr/include/c++/13/functional /usr/include/c++/13/bits/std_function.h \
+ /usr/include/c++/13/array /usr/include/c++/13/compare \
+ /usr/include/c++/13/iostream /usr/include/c++/13/ostream \
+ /usr/include/c++/13/ios /usr/include/c++/13/bits/ios_base.h \
  /usr/include/c++/13/bits/locale_classes.h \
  /usr/include/c++/13/bits/locale_classes.tcc \
  /usr/include/c++/13/system_error \

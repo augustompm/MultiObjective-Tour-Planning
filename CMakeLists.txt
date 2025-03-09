@@ -20,8 +20,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 set(SOURCES
     src/models.cpp
     src/utils.cpp
-    src/nsga2.cpp
     src/hypervolume.cpp
+    src/nsga2-base.cpp  
 )
 
 # Cria biblioteca estática
