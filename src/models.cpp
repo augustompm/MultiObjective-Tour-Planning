@@ -5,13 +5,15 @@
 #include <stdexcept>
 #include <algorithm>
 #include <sstream>
+#include <unordered_set>
 
 namespace tourist {
 
 // Implementação da classe Attraction
-Attraction::Attraction(std::string name, double lat, double lon, int visit_time, 
+Attraction::Attraction(std::string name, std::string neighborhood, double lat, double lon, int visit_time, 
                      double cost, int opening_time, int closing_time)
     : name_(std::move(name))
+    , neighborhood_(std::move(neighborhood))  // Added neighborhood
     , latitude_(lat)
     , longitude_(lon)
     , visit_time_(visit_time)
@@ -302,10 +304,17 @@ void Solution::calculateObjectives() {
         time_penalty = violation * (1.0 + violation / max_time);
     }
     
+    // Count unique neighborhoods
+    std::unordered_set<std::string> neighborhoods;
+    for (const auto* attraction : route_.getAttractions()) {
+        neighborhoods.insert(attraction->getNeighborhood());
+    }
+    
     objectives_ = {
         route_.getTotalCost(),                     // Minimizar custo total
         total_time + time_penalty,                 // Minimizar tempo total (com penalidade)
-        -static_cast<double>(route_.getNumAttractions())  // Maximizar número de atrações
+        -static_cast<double>(route_.getNumAttractions()),  // Maximizar número de atrações
+        -static_cast<double>(neighborhoods.size())  // Maximizar número de bairros
     };
 }
 

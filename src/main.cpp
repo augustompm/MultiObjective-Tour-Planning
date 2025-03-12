@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <filesystem>
+#include <unordered_set>
 
 using namespace tourist;
 
@@ -28,6 +29,25 @@ void printSolution(const Solution& solution, size_t index) {
     std::cout << "Tempo Total: " << std::setprecision(TIME_PRECISION) 
               << objectives[1] << " minutos\n";
     std::cout << "Atrações Visitadas: " << std::abs(static_cast<int>(objectives[2])) << "\n";
+    
+    // Add neighborhood information
+    std::unordered_set<std::string> neighborhoods;
+    for (const auto* attraction : route.getAttractions()) {
+        neighborhoods.insert(attraction->getNeighborhood());
+    }
+    std::cout << "Bairros Visitados: " << neighborhoods.size() << "\n";
+    
+    // Display the neighborhoods
+    if (!neighborhoods.empty()) {
+        std::cout << "Bairros: ";
+        size_t i = 0;
+        for (const auto& neighborhood : neighborhoods) {
+            if (i > 0) std::cout << ", ";
+            std::cout << neighborhood;
+            i++;
+        }
+        std::cout << "\n";
+    }
     
     std::cout << "\nRoteiro Detalhado:\n";
     const auto& attractions = route.getAttractions();
@@ -168,10 +188,10 @@ int main() {
         
         // Encontrar os arquivos de matriz mais recentes
         const std::string osrm_path = "../OSRM/";  // Use relative path from build directory
-        const std::string car_dist_file = osrm_path + "matriz_distancias_carro_metros_2025-03-07_17-03-54.csv";
-        const std::string walk_dist_file = osrm_path + "matriz_distancias_pe_metros_2025-03-07_17-03-54.csv";
-        const std::string car_time_file = osrm_path + "matriz_tempos_carro_min_2025-03-07_17-03-54.csv";
-        const std::string walk_time_file = osrm_path + "matriz_tempos_pe_min_2025-03-07_17-03-54.csv";
+        const std::string car_dist_file = osrm_path + "matriz_distancias_carro_metros_2025-03-11_11-47-53.csv";
+        const std::string walk_dist_file = osrm_path + "matriz_distancias_pe_metros_2025-03-11_11-47-53.csv";
+        const std::string car_time_file = osrm_path + "matriz_tempos_carro_min_2025-03-11_11-47-53.csv";
+        const std::string walk_time_file = osrm_path + "matriz_tempos_pe_min_2025-03-11_11-47-53.csv";
         
         // Carregar as matrizes de distância e tempo
         std::cout << "Carregando matrizes de distância e tempo...\n";

@@ -22,12 +22,14 @@ class Route;
 
 class Attraction {
 public:
-    Attraction(std::string name, double lat, double lon, int visit_time, 
+    Attraction(std::string name, std::string neighborhood, double lat, double lon, int visit_time, 
               double cost, int opening_time, int closing_time);
 
     // Getters
     const std::string& getName() const { return name_; }
-    std::pair<double, double> getCoordinates() const { return {latitude_, longitude_}; }
+    const std::string& getNeighborhood() const { return neighborhood_; }  // Added getter
+    double getLatitude() const { return latitude_; }
+    double getLongitude() const { return longitude_; }
     int getVisitTime() const { return visit_time_; }
     double getCost() const { return cost_; }
     int getOpeningTime() const { return opening_time_; }
@@ -48,6 +50,7 @@ public:
 
 private:
     std::string name_;
+    std::string neighborhood_;  // Added neighborhood field
     double latitude_, longitude_;
     int visit_time_;        // em minutos
     double cost_;           // em reais

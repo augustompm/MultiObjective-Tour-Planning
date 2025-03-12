@@ -405,35 +405,36 @@ std::vector<Attraction> Parser::loadAttractions(const std::string& filename) {
     std::vector<Attraction> attractions;
     std::string line;
     
-    std::getline(file, line); // Pula a linha de cabeçalho
+    std::getline(file, line); // Skip header line
     
     while (std::getline(file, line)) {
         if (line.empty() || line[0] == '#') continue;
         
         auto parts = split(line, ';');
-        if (parts.size() < 6) {
-            std::cerr << "Aviso: Linha com formato inválido ignorada: " << line << std::endl;
+        if (parts.size() < 7) {  // Update to check for all required fields including neighborhood
+            std::cerr << "Warning: Invalid line format ignored: " << line << std::endl;
             continue;
         }
         
         try {
-            auto coords = parseCoordinates(parts[1]);
-            int visitTime = std::stoi(parts[2]);
-            double cost = std::stod(parts[3]);
-            int openingTime = std::stoi(parts[4]);
-            int closingTime = std::stoi(parts[5]);
+            auto coords = parseCoordinates(parts[2]);
+            int visitTime = std::stoi(parts[3]);
+            double cost = std::stod(parts[4]);
+            int openingTime = std::stoi(parts[5]);
+            int closingTime = std::stoi(parts[6]);
             
             attractions.emplace_back(
-                parts[0],                      // nome
+                parts[0],                      // name
+                parts[1],                      // neighborhood
                 coords.first,                  // latitude
                 coords.second,                 // longitude
-                visitTime,                     // tempo de visita
-                cost,                          // custo
-                openingTime,                   // horário abertura
-                closingTime                    // horário fechamento
+                visitTime,                     // visit time
+                cost,                          // cost
+                openingTime,                   // opening time
+                closingTime                    // closing time
             );
         } catch (const std::exception& e) {
-            std::cerr << "Erro ao processar atração: " << e.what() << std::endl;
+            std::cerr << "Error processing attraction: " << e.what() << std::endl;
         }
     }
     

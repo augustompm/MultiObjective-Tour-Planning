@@ -43,6 +43,13 @@ void NSGA2Base::Individual::evaluate(const NSGA2Base& algorithm) {
     double total_time = route.getTotalTime();
     int num_attractions = route.getNumAttractions();
     
+    // Count unique neighborhoods
+    std::unordered_set<std::string> neighborhoods;
+    for (const auto* attraction : route.getAttractions()) {
+        neighborhoods.insert(attraction->getNeighborhood());
+    }
+    int num_neighborhoods = neighborhoods.size();
+    
     // Check if route is valid
     bool is_valid = route.isValid();
     
@@ -51,7 +58,8 @@ void NSGA2Base::Individual::evaluate(const NSGA2Base& algorithm) {
         objectives_ = {
             1000.0,                               // High cost penalty
             utils::Config::DAILY_TIME_LIMIT,      // Excessive time penalty
-            -1.0                                  // Few attractions penalty
+            -1.0,                                 // Few attractions penalty
+            -1.0                                  // Few neighborhoods penalty
         };
     } else {
         // Check if time exceeds the limit with tolerance
@@ -66,9 +74,10 @@ void NSGA2Base::Individual::evaluate(const NSGA2Base& algorithm) {
         
         // Set objectives with accurate cost calculation
         objectives_ = {
-            total_cost,                           // Minimize cost
-            total_time + time_penalty,            // Minimize time
-            -static_cast<double>(num_attractions) // Maximize attractions (negative for minimization)
+            total_cost,                             // Minimize cost
+            total_time + time_penalty,              // Minimize time
+            -static_cast<double>(num_attractions),  // Maximize attractions (negative for minimization)
+            -static_cast<double>(num_neighborhoods) // Maximize neighborhoods (negative for minimization)
         };
     }
 }
@@ -80,13 +89,12 @@ bool NSGA2Base::Individual::dominates(const Individual& other) const {
     // 2) Solution i is strictly better than j in at least one objective
     
     const auto& other_obj = other.getObjectives();
-    
-    // Check dominance in all objectives
     bool at_least_one_better = false;
     
     for (size_t i = 0; i < objectives_.size(); ++i) {
-        if (i == 2) {
-            // For attractions (objective 2, negated), lower is better (maximizing original value)
+        if (i == 2 || i == 3) {
+            // For attractions (objective 2) and neighborhoods (objective 3), 
+            // lower is better (since they're negated to convert maximization to minimization)
             if (objectives_[i] > other_obj[i]) {
                 return false;  // Solution i is worse in this objective
             }
