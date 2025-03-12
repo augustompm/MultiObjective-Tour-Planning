@@ -840,6 +840,7 @@ void NSGA2Base::logProgress(size_t generation, const std::vector<Front>& fronts)
             double best_cost = std::numeric_limits<double>::max();
             double best_time = std::numeric_limits<double>::max();
             double max_attractions = 0;
+            double max_neighborhoods = 0;  // Add this variable
             bool found_valid = false;
             
             for (const auto& ind : fronts[0]) {
@@ -849,6 +850,13 @@ void NSGA2Base::logProgress(size_t generation, const std::vector<Front>& fronts)
                 if (test_route.isValid() && !test_route.getAttractions().empty()) {
                     found_valid = true;
                     
+                    // Count unique neighborhoods
+                    std::unordered_set<std::string> neighborhoods;
+                    for (const auto* attraction : test_route.getAttractions()) {
+                        neighborhoods.insert(attraction->getNeighborhood());
+                    }
+                    int actual_neighborhoods = neighborhoods.size();
+                    
                     // Use actual route values, not objective values
                     double actual_cost = test_route.getTotalCost();
                     double actual_time = test_route.getTotalTime();
@@ -857,6 +865,7 @@ void NSGA2Base::logProgress(size_t generation, const std::vector<Front>& fronts)
                     best_cost = std::min(best_cost, actual_cost);
                     best_time = std::min(best_time, actual_time);
                     max_attractions = std::max(max_attractions, static_cast<double>(actual_attractions));
+                    max_neighborhoods = std::max(max_neighborhoods, static_cast<double>(actual_neighborhoods));  // Track max neighborhoods
                 }
             }
             
@@ -864,7 +873,8 @@ void NSGA2Base::logProgress(size_t generation, const std::vector<Front>& fronts)
             if (found_valid) {
                 std::cout << ", Best solution: [Cost=" << std::fixed << std::setprecision(2) << best_cost 
                         << ", Time=" << std::fixed << std::setprecision(1) << best_time 
-                        << ", Attractions=" << static_cast<int>(max_attractions) << "]";
+                        << ", Attractions=" << static_cast<int>(max_attractions)
+                        << ", Neighborhoods=" << static_cast<int>(max_neighborhoods) << "]";  // Add neighborhood info
             } else {
                 std::cout << ", No valid solutions yet";
             }

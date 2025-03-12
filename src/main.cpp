@@ -132,7 +132,7 @@ void exportResults(const std::vector<Solution>& solutions, const std::string& fi
         throw std::runtime_error("Erro ao criar arquivo: " + filename);
     }
 
-    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;HoraInicio;HoraFim;Sequencia;TemposChegada;TemposPartida;ModosTransporte\n";
+    file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;NumBairros;HoraInicio;HoraFim;Bairros;Sequencia;TemposChegada;TemposPartida;ModosTransporte\n";
     
     for (size_t i = 0; i < solutions.size(); ++i) {
         const auto& solution = solutions[i];
@@ -145,13 +145,26 @@ void exportResults(const std::vector<Solution>& solutions, const std::string& fi
         double start_time = 9 * 60; 
         double end_time = start_time + route.getTotalTime();
         
+        // Calculate unique neighborhoods
+        std::unordered_set<std::string> neighborhoods;
+        for (const auto* attraction : attractions) {
+            neighborhoods.insert(attraction->getNeighborhood());
+        }
+        
         file << std::fixed << std::setprecision(COST_PRECISION);
         file << (i + 1) << ";";
         file << objectives[0] << ";";
         file << objectives[1] << ";";
         file << std::abs(static_cast<int>(objectives[2])) << ";";
+        file << neighborhoods.size() << ";";  // Number of neighborhoods
         file << utils::Transport::formatTime(start_time) << ";";
         file << utils::Transport::formatTime(end_time) << ";";
+        
+        // Neighborhood list
+        for (const auto& neighborhood : neighborhoods) {
+            file << neighborhood << "|";
+        }
+        file << ";";
         
         // Sequência de atrações
         for (const auto* attraction : attractions) {
@@ -256,26 +269,31 @@ int main() {
             }
             
             // Ordenar soluções por: 
-            // 1. Número de atrações (decrescente)
-            // 2. Custo (crescente)
-            // 3. Tempo (crescente)
+            // 1. Número de bairros (decrescente)
+            // 2. Número de atrações (decrescente)
+            // 3. Custo (crescente)
+            // 4. Tempo (crescente)
             std::sort(solutions.begin(), solutions.end(), 
                 [](const Solution& a, const Solution& b) {
                     const auto& obj_a = a.getObjectives();
                     const auto& obj_b = b.getObjectives();
                     
-                    // Primeiro por número de atrações (decrescente)
-                    // -obj[2] porque o objetivo é negativo (queremos maximizar)
-                    if (obj_a[2] != obj_b[2]) {
-                        return obj_a[2] < obj_b[2]; // Menor valor negativo = mais atrações
+                    // First by number of neighborhoods (descending)
+                    if (obj_a[3] != obj_b[3]) {
+                        return obj_a[3] < obj_b[3]; // Smaller negative value = more neighborhoods
                     }
                     
-                    // Em caso de empate, ordenar por custo (crescente)
+                    // Then by number of attractions (descending)
+                    if (obj_a[2] != obj_b[2]) {
+                        return obj_a[2] < obj_b[2]; // Smaller negative value = more attractions
+                    }
+                    
+                    // Then by cost (ascending)
                     if (std::abs(obj_a[0] - obj_b[0]) > 1e-6) {
                         return obj_a[0] < obj_b[0];
                     }
                     
-                    // Em caso de empate de custo, ordenar por tempo (crescente)
+                    // Then by time (ascending)
                     return obj_a[1] < obj_b[1];
                 }
             );
