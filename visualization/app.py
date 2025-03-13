@@ -190,17 +190,14 @@ def prepare_linked_arcs_data(results_df):
             for col in missing_cols:
                 results_df[col] = 0
         
-        # Prepare data for the linked arcs visualization
+        # Prepare data for the linked arcs visualization without negating values
         data = []
         for i, row in results_df.iterrows():
             solution = {}
             for j, obj in enumerate(objectives):
-                # For NumAtracoes and NumBairros (which are to be maximized),
-                # we negate the values for the visualization
-                if obj in ['NumAtracoes', 'NumBairros']:
-                    solution[f'Obj{j+1}'] = -row[obj]
-                else:
-                    solution[f'Obj{j+1}'] = row[obj]
+                # Usar valores diretos para todos os objetivos
+                # O direcionamento será feito no código JavaScript
+                solution[f'Obj{j+1}'] = float(row[obj])
             data.append(solution)
         
         logger.info(f"Dados LinkedArcs preparados com sucesso. Soluções: {len(data)}")
@@ -244,7 +241,6 @@ app.layout = dbc.Container([
     
     dbc.Row([
         dbc.Col([
-            html.H3("Visualização das Soluções - Coordenadas Paralelas", className="text-center"),
             dcc.Graph(id='parallel-coords-plot'),
             
             # Replace the static text with a collapsible component
@@ -395,7 +391,7 @@ def provide_solution_dial_script(_):
         }
         """
 
-# Callback for parallel coordinates plot
+# Update the parallel coordinates plot to show correct values for discrete dimensions
 @app.callback(
     Output('parallel-coords-plot', 'figure'),
     Input('solution-slider', 'value')
@@ -407,30 +403,29 @@ def update_parallel_coords(selected_solution):
             logger.warning("Dados de coordenadas paralelas vazios")
             return go.Figure()
         
-        # Criar uma cópia dos dados para manipulação
+        # Create a copy of the data for manipulation
         display_data = parallel_data.copy()
         
-        # Ajustar a escala de cores para destacar a solução selecionada
+        # Adjust color values to highlight selected solution
         selected_idx = selected_solution - 1
-        color_values = np.ones(len(display_data)) * 0.3  # Valor base para todas as soluções
+        color_values = np.ones(len(display_data)) * 0.3  # Base value for all solutions
         
         if 0 <= selected_idx < len(display_data):
-            color_values[selected_idx] = 1.0  # Valor para solução selecionada
+            color_values[selected_idx] = 1.0  # Value for selected solution
         
-        # Extrair os limites corretos para os rótulos dos eixos
+        # Extract correct ranges for axis labels
         cost_min = results_df['CustoTotal'].min()
         cost_max = results_df['CustoTotal'].max()
         
         time_min = results_df['TempoTotal'].min()
         time_max = results_df['TempoTotal'].max()
         
-        attractions_min = results_df['NumAtracoes'].min()
-        attractions_max = results_df['NumAtracoes'].max()
+        # For discrete values, get unique values and sort them
+        # Crucial fix: ensure we're working with actual integer values
+        attractions_values = sorted([int(x) for x in results_df['NumAtracoes'].unique()])
+        neighborhoods_values = sorted([int(x) for x in results_df['NumBairros'].unique()])
         
-        neighborhoods_min = results_df['NumBairros'].min()
-        neighborhoods_max = results_df['NumBairros'].max()
-        
-        # Criar o gráfico de coordenadas paralelas com dimensões corretamente formatadas
+        # Create the parallel coordinates plot using ACTUAL DATA VALUES, not normalized
         fig = go.Figure(data=
             go.Parcoords(
                 line=dict(
@@ -440,52 +435,44 @@ def update_parallel_coords(selected_solution):
                 ),
                 dimensions=[
                     dict(
-                        range=[0, 1],
+                        range=[cost_min, cost_max],
                         label='Custo Total (R$)',
-                        values=display_data['CustoTotal'],
-                        tickvals=[0, 0.25, 0.5, 0.75, 1],
-                        ticktext=[f"R$ {cost_max:.0f}", f"R$ {cost_max - (cost_max-cost_min)*0.25:.0f}", 
-                                f"R$ {cost_max - (cost_max-cost_min)*0.5:.0f}", 
-                                f"R$ {cost_max - (cost_max-cost_min)*0.75:.0f}", f"R$ {cost_min:.0f}"]
+                        values=results_df['CustoTotal'],
+                        tickvals=np.linspace(cost_min, cost_max, 5),
+                        ticktext=[f"R$ {val:.0f}" for val in np.linspace(cost_min, cost_max, 5)]
                     ),
                     dict(
-                        range=[0, 1],
+                        range=[time_min, time_max],
                         label='Tempo Total (min)',
-                        values=display_data['TempoTotal'],
-                        tickvals=[0, 0.25, 0.5, 0.75, 1],
-                        ticktext=[f"{time_max:.0f}", f"{time_max - (time_max-time_min)*0.25:.0f}", 
-                                f"{time_max - (time_max-time_min)*0.5:.0f}", 
-                                f"{time_max - (time_max-time_min)*0.75:.0f}", f"{time_min:.0f}"]
+                        values=results_df['TempoTotal'],
+                        tickvals=np.linspace(time_min, time_max, 5),
+                        ticktext=[f"{val:.0f}" for val in np.linspace(time_min, time_max, 5)]
                     ),
                     dict(
-                        range=[0, 1],
+                        range=[min(attractions_values), max(attractions_values)],
                         label='Atrações',
-                        values=1 - display_data['NumAtracoes'],  # Inverter para maximização
-                        tickvals=[0, 0.25, 0.5, 0.75, 1],
-                        ticktext=[f"{attractions_max:.0f}", f"{attractions_max - (attractions_max-attractions_min)*0.25:.0f}", 
-                                f"{attractions_max - (attractions_max-attractions_min)*0.5:.0f}", 
-                                f"{attractions_max - (attractions_max-attractions_min)*0.75:.0f}", f"{attractions_min:.0f}"]
+                        values=results_df['NumAtracoes'],
+                        tickvals=attractions_values,
+                        ticktext=attractions_values
                     ),
                     dict(
-                        range=[0, 1],
+                        range=[min(neighborhoods_values), max(neighborhoods_values)],
                         label='Bairros',
-                        values=1 - display_data['NumBairros'],  # Inverter para maximização
-                        tickvals=[0, 0.25, 0.5, 0.75, 1],
-                        ticktext=[f"{neighborhoods_max:.0f}", f"{neighborhoods_max - (neighborhoods_max-neighborhoods_min)*0.25:.0f}", 
-                                f"{neighborhoods_max - (neighborhoods_max-neighborhoods_min)*0.5:.0f}", 
-                                f"{neighborhoods_max - (neighborhoods_max-neighborhoods_min)*0.75:.0f}", f"{neighborhoods_min:.0f}"]
+                        values=results_df['NumBairros'],
+                        tickvals=neighborhoods_values,
+                        ticktext=neighborhoods_values
                     )
                 ]
             )
         )
         
-        # Melhorar layout do gráfico
+        # Improve layout
         fig.update_layout(
-            margin=dict(l=100, r=100, t=100, b=80),  # Increase top margin
+            margin=dict(l=100, r=100, t=80, b=80),
             height=600,
             title={
                 'text': "Visualização de Coordenadas Paralelas das Soluções Não-dominadas",
-                'y': 0.98,  # Move title higher
+                'y': 0.95,
                 'x': 0.5,
                 'xanchor': 'center',
                 'yanchor': 'top',
