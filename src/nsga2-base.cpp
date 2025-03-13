@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <filesystem>
 #include <unordered_set>
 #include <iomanip>  // For std::setprecision
 
@@ -701,7 +702,8 @@ NSGA2Base::Population NSGA2Base::selectNextGeneration(const Population& parents,
 
 std::vector<Solution> NSGA2Base::run() {
     // Create file for tracking generations data
-    std::ofstream generations_file("geracoes_nsga2_base.csv", std::ios::out);
+    std::filesystem::path results_dir = "../results";
+    std::ofstream generations_file((results_dir / "nsga2-geracoes.csv").string(), std::ios::out);
     if (generations_file.is_open()) {
         generations_file << "Generation;Front size;Best Cost;Best Time;Max Attractions" << std::endl;
     }

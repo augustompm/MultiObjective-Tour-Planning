@@ -197,6 +197,13 @@ int main() {
 
     try {
         std::cout << "\n=== Planejador de Rotas Turísticas Multiobjetivo ===\n\n";
+        
+        // Create results directory at the project root level (outside build)
+        std::filesystem::path results_dir = "../results";
+        if (!std::filesystem::exists(results_dir)) {
+            std::filesystem::create_directory(results_dir);
+        }
+        
         std::cout << "Carregando dados...\n";
         
         // Encontrar os arquivos de matriz mais recentes
@@ -306,7 +313,7 @@ int main() {
                 printSolution(solutions[i], i);
             }
             
-            const std::string output_file = "resultados_nsga2_base.csv";
+            const std::string output_file = (results_dir / "nsga2-resultados.csv").string();
             exportResults(solutions, output_file);
             std::cout << "\nResultados detalhados exportados para: " << output_file << "\n";
             
