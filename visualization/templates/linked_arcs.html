@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+  <head>
+    <!-- Use a specific version from a CDN -->
+    <script src="https://d3js.org/d3.v3.min.js" integrity="sha384-N8EP0Yml0jN7e0DcXlZ6rt+iqKU9Ck6f1ZQ+j2puxatnBq4k9E8Q6vqBcY34LNbn" crossorigin="anonymous"></script>
+    <script>
+      // Verify D3 is loaded properly
+      window.addEventListener('DOMContentLoaded', function() {
+        if (typeof d3 === 'undefined') {
+          console.error("Error loading D3.js - library not defined");
+          document.getElementById('mainDiv').innerHTML = 
+            '<p style="color:red;text-align:center;margin:20px;">Error loading D3.js library. Please check your connection and reload the page.</p>';
+        }
+      });
+    </script>
+    <script src="{{ url_for('static', filename='js/linkedArc.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Josefin+Slab">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      #mainDiv {
+        position: absolute;
+        margin: 0 auto;
+        width: 100%;
+        height: 100%;
+        top: 0px;
+        left: 0%;
+      }
+      .tooltipTitle {
+        font-family: 'Arial';
+        font-size: 13px;
+        font-weight: bold;
+      }
+      .tooltipVal {
+        font-family: 'Josefin Slab';
+        font-size: 15px;
+        font-style: italic;
+      }
+      .selectionFrame {
+        stroke: gray;
+        stroke-width: 1px;
+        stroke-dasharray: 4px;
+        stroke-opacity: 1;
+        fill: blue;
+        opacity: 0.1;
+      }
+      .link {
+        stroke: #3498db;
+        stroke-width: 1.5;
+        opacity: 0.5;
+        fill: none;
+      }
+      .coloredLink {
+        stroke-width: 1.5;
+        fill: none;
+      }
+      .linkOver {
+        stroke: #e74c3c;
+        stroke-width: 2;
+        opacity: 1;
+        fill: none;
+      }
+      .linkNoOver {
+        stroke: #3498db;
+        stroke-width: 1;
+        opacity: 0.3;
+        fill: none;
+      }
+      .linkOnObj {
+        stroke: #e74c3c;
+        stroke-width: 1;
+        opacity: 1;
+        fill: none;
+      }
+      .selectedLink {
+        stroke: #2ecc71;
+        stroke-width: 1.5;
+        opacity: 1;
+        fill: none;
+      }
+      .unSelectedLink {
+        stroke: #3498db;
+        stroke-width: 1;
+        opacity: 0.01;
+        fill: none;
+      }
+      .arcPath {
+        cursor: pointer;
+      }
+      .objectiveLabel {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+        text-anchor: middle;
+      }
+      h3 {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        margin: 10px 0;
+      }
+    </style>
+    <title>Harmony between objectives</title>
+  </head>
+  <body>
+    <h3>Visualização de Objetivos Interconectados</h3>
+    <div id="mainDiv"></div>
+    <script>
+      // Make sure D3 is loaded before using it
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof d3 === 'undefined') {
+          console.error("D3.js não foi carregado corretamente!");
+          document.getElementById('mainDiv').innerHTML = '<p class="text-danger">Erro: Biblioteca D3.js não carregada. Por favor, recarregue a página.</p>';
+          return;
+        }
+        
+        var doc; // Document Size
+        doc = document.getElementById('mainDiv');
+        var mainSVG = d3.select('#mainDiv').append('svg')
+                      .attr('id', 'mainSVG')
+                      .attr('width', doc.clientWidth)
+                      .attr('height', doc.clientHeight)
+                      .on("mousedown", mouseDown)
+                      .on("mouseup", mouseUp)
+                      .on('click', Reset);
+
+        // Define objective names
+        var objectiveNames = [
+          "Custo Total",
+          "Tempo Total",
+          "Atrações",
+          "Bairros"
+        ];
+        
+        d3.json("/data.json", function(error, data) {
+          if (error) {
+            console.error("Error loading data:", error);
+            return;
+          }
+          
+          Data = data;
+          Arcs();
+        });
+      });
+    </script>
+  </body>
+</html>
