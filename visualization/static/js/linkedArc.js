@@ -51,12 +51,30 @@ function Arcs() {
         };
     }
     
-    // Draw background elements
+    // Draw background elements first
     drawBackground(X, Y, inR, outR, arcAngles);
     
+    // Create points for each solution on each arc
+    var solutionPoints = calculateSolutionPoints(X, Y, inR, outR, arcAngles);
+    
+    // Draw lines connecting the solutions (FIRST, so they're behind everything else)
+    drawConnectingLines(solutionPoints, X, Y);
+    
+    // AFTER drawing the lines, draw the arcs
+    drawArcs(X, Y, inR, outR, arcAngles);
+    
+    // LAST, add the labels for each objective so they're on top of everything
+    addObjectiveLabels(X, Y, inR, outR, arcAngles);
+    
+    // Store line coordinates for selection functionality
+    storeLineCoordinates();
+}
+
+// Split the arc drawing into its own function
+function drawArcs(X, Y, inR, outR, arcAngles) {
     // Create arc generators
     var arcs = [];
-    for (i = 0; i < dim; i++) {
+    for (var i = 0; i < dim; i++) {
         arcs[i] = d3.svg.arc()
             .innerRadius(inR)
             .outerRadius(outR)
@@ -82,17 +100,81 @@ function Arcs() {
             unhighlightObjectives();
         });
     
-    // Add labels for each objective
-    addObjectiveLabels(X, Y, inR, outR, arcAngles);
+    return arcPaths;
+}
+
+// Update the objective labels function
+function addObjectiveLabels(X, Y, inR, outR, arcAngles) {
+    // Create a labels group that will be rendered last (on top of everything)
+    var labelsGroup = d3.select('#mainSVG').append('g')
+        .attr('class', 'labels-group');
     
-    // Create points for each solution on each arc
-    var solutionPoints = calculateSolutionPoints(X, Y, inR, outR, arcAngles);
-    
-    // Draw lines connecting the solutions across objectives
-    drawConnectingLines(solutionPoints, X, Y);
-    
-    // Store line coordinates for selection functionality
-    storeLineCoordinates();
+    for (var i = 0; i < dim; i++) {
+        // Add objective name
+        var midAngle = (arcAngles[i].start + arcAngles[i].end) / 2;
+        var labelRadius = outR + 40;
+        var labelX = X + Math.sin(midAngle) * labelRadius;
+        var labelY = Y - Math.cos(midAngle) * labelRadius;
+        
+        labelsGroup.append('text')
+            .attr('class', 'objectiveLabel')
+            .attr('x', labelX)
+            .attr('y', labelY)
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .text(objectiveNames[i]);
+        
+        // Add value labels on the arcs
+        var valueLabels = [];
+        
+        if (i < 2) {
+            // Continuous objectives (cost, time)
+            valueLabels = [
+                {
+                    value: toMinimize[i] ? minObj[i] : maxObj[i],
+                    position: 0.9  // Position closer to the start of the arc
+                },
+                {
+                    value: toMinimize[i] ? maxObj[i] : minObj[i],
+                    position: 0.1  // Position closer to the end of the arc
+                }
+            ];
+        } else {
+            // Integer objectives (attractions, neighborhoods)
+            valueLabels = [
+                {
+                    value: Math.round(toMinimize[i] ? minObj[i] : maxObj[i]),
+                    position: 0.9
+                },
+                {
+                    value: Math.round(toMinimize[i] ? maxObj[i] : minObj[i]),
+                    position: 0.1
+                }
+            ];
+        }
+        
+        // Add the value labels
+        valueLabels.forEach(function(label) {
+            var angle = arcAngles[i].start + (arcAngles[i].end - arcAngles[i].start) * label.position;
+            var markerX = X + Math.sin(angle) * (outR - 15);
+            var markerY = Y - Math.cos(angle) * (outR - 15);
+            
+            var displayValue = label.value;
+            if (i === 0) displayValue = "R$" + Math.round(displayValue);
+            if (i === 1) displayValue = Math.round(displayValue) + "min";
+            
+            // Add the text label (no circle background, just the text)
+            labelsGroup.append('text')
+                .attr('class', 'objectiveValue')
+                .attr('x', markerX)
+                .attr('y', markerY)
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .attr('font-weight', 'bold')
+                .attr('font-size', '14px')
+                .text(displayValue);
+        });
+    }
 }
 
 function processData() {
@@ -177,76 +259,6 @@ function drawBackground(X, Y, inR, outR, arcAngles) {
     }
 }
 
-function addObjectiveLabels(X, Y, inR, outR, arcAngles) {
-    for (var i = 0; i < dim; i++) {
-        // Add objective name
-        var midAngle = (arcAngles[i].start + arcAngles[i].end) / 2;
-        var labelRadius = outR + 40;
-        var labelX = X + Math.sin(midAngle) * labelRadius;
-        var labelY = Y - Math.cos(midAngle) * labelRadius;
-        
-        d3.select('#mainSVG').append('text')
-            .attr('class', 'objectiveLabel')
-            .attr('x', labelX)
-            .attr('y', labelY)
-            .attr('text-anchor', 'middle')
-            .attr('alignment-baseline', 'middle')
-            .text(objectiveNames[i]);
-        
-        // Add min/max labels
-        var minMaxLabels = [];
-        
-        if (i < 2) {
-            // Continuous objectives (cost, time)
-            minMaxLabels = [
-                {
-                    value: toMinimize[i] ? minObj[i] : maxObj[i],
-                    position: 0.9,
-                    prefix: 'min: '
-                },
-                {
-                    value: toMinimize[i] ? maxObj[i] : minObj[i],
-                    position: 0.1,
-                    prefix: 'max: '
-                }
-            ];
-        } else {
-            // Integer objectives (attractions, neighborhoods)
-            minMaxLabels = [
-                {
-                    value: Math.round(toMinimize[i] ? minObj[i] : maxObj[i]),
-                    position: 0.9,
-                    prefix: 'min: '
-                },
-                {
-                    value: Math.round(toMinimize[i] ? maxObj[i] : minObj[i]),
-                    position: 0.1,
-                    prefix: 'max: '
-                }
-            ];
-        }
-        
-        // Add the min/max labels
-        minMaxLabels.forEach(function(label) {
-            var angle = arcAngles[i].start + (arcAngles[i].end - arcAngles[i].start) * label.position;
-            var markerX = X + Math.sin(angle) * (outR - 15);
-            var markerY = Y - Math.cos(angle) * (outR - 15);
-            
-            var displayValue = label.value;
-            if (i === 0) displayValue = "R$" + Math.round(displayValue);
-            if (i === 1) displayValue = Math.round(displayValue) + "min";
-            
-            d3.select('#mainSVG').append('text')
-                .attr('class', 'objectiveValue')
-                .attr('x', markerX)
-                .attr('y', markerY)
-                .attr('text-anchor', 'middle')
-                .attr('alignment-baseline', 'middle')
-                .text(label.prefix + displayValue);
-        });
-    }
-}
-
 function calculateSolutionPoints(X, Y, inR, outR, arcAngles) {
     var solutionPoints = [];
     
@@ -280,21 +292,32 @@ function calculateSolutionPoints(X, Y, inR, outR, arcAngles) {
 
 function drawConnectingLines(solutionPoints, X, Y) {
     // Create a line function that will generate curves passing through the center
+    // Using 'bundle' interpolation with higher tension (0.85 instead of 0.5)
+    // to make curves orbit more strongly toward the center
     var lineGenerator = d3.svg.line()
         .x(function(d) { return d.x; })
         .y(function(d) { return d.y; })
         .interpolate('bundle')  // Use bundle interpolation for star-like pattern
-        .tension(0.5);  // Adjust tension for more curved lines
+        .tension(0.85);  // Increased tension for stronger curves toward center
     
     // Draw lines connecting ALL objectives for each solution
     for (var i = 0; i < solutionPoints.length; i++) {
         // For each pair of objectives
         for (var j = 0; j < dim; j++) {
             for (var k = j + 1; k < dim; k++) {
+                // Add more control points to enhance the center-orbiting effect
                 var points = [
-                    solutionPoints[i][j],  // Source point
-                    {x: X, y: Y},           // Center point for the curve
-                    solutionPoints[i][k]   // Target point
+                    solutionPoints[i][j],                  // Source point
+                    {                                      // Control point closer to source
+                        x: X + (solutionPoints[i][j].x - X) * 0.3,
+                        y: Y + (solutionPoints[i][j].y - Y) * 0.3
+                    },
+                    {x: X, y: Y},                         // Center point
+                    {                                      // Control point closer to target
+                        x: X + (solutionPoints[i][k].x - X) * 0.3,
+                        y: Y + (solutionPoints[i][k].y - Y) * 0.3
+                    },
+                    solutionPoints[i][k]                   // Target point
                 ];
                 
                 d3.select('#mainSVG').append('path')
