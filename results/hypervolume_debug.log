@@ -1,0 +1,68 @@
+DEBUG: === RUNNING TEST CASES ===
+DEBUG: 
+=== CALCULATING DIRECT RAW HYPERVOLUME ===
+DEBUG: Original solutions (sample): [[100, 200, 0, 0], [150, 150, 0, 0], [200, 100, 0, 0]]
+DEBUG: Reference point: [250, 250, 0, 0]
+DEBUG: Directly contributing points: 3 of 3
+DEBUG: Direct raw hypervolume: 0.0
+DEBUG: 2D Test Case: Expected 15000, Got 0.0
+DEBUG: 
+=== CALCULATING DIRECT RAW HYPERVOLUME ===
+DEBUG: Original solutions (sample): [[100, 200, -8, -7], [150, 150, -7, -8], [200, 100, -9, -6]]
+DEBUG: Reference point: [250, 250, -5, -5]
+DEBUG: Directly contributing points: 3 of 3
+DEBUG: Direct raw hypervolume: 47500.0
+DEBUG: 4D Test Case: Got 47500.0
+DEBUG: 
+=== CALCULATING NORMALIZED HYPERVOLUME ===
+DEBUG: Ideal point for normalization: [0.0, 60.0, -7, -6]
+DEBUG: Nadir point for normalization: [500.0, 840.0, -9, -8]
+DEBUG: Normalized points (sample): [[0.2, 0.1794871794871795, 0.5, 0.5], [0.3, 0.11538461538461539, -0.0, 1.0], [0.4, 0.05128205128205128, 1.0, -0.0]]
+DEBUG: Normalized reference: [0.5, 0.24358974358974358, -1.0, -0.5]
+DEBUG: Points in minimization format (sample): [[0.2, 0.1794871794871795, -0.5, -0.5], [0.3, 0.11538461538461539, 0.0, -1.0], [0.4, 0.05128205128205128, -1.0, 0.0]]
+DEBUG: Reference in minimization format: [0.5, 0.24358974358974358, 1.0, 0.5]
+DEBUG: Contributing points: 3 of 3
+DEBUG: Normalized hypervolume: -0.009615384615384621
+DEBUG: 4D Normalized Test: Got -0.009615384615384621
+DEBUG: WARNING: Test cases failed. Hypervolume calculation may be incorrect.
+Found 1 result files
+Using reference point: [550.0, 924.0000000000001, -0.9, -0.9]
+Loaded 63 solutions. Sample: [[335.14, 788.0, -7.0, -7.0], [348.85, 783.0, -7.0, -7.0]]
+Loaded 63 solutions for NSGA-II
+DEBUG: 
+=== CALCULATING DIRECT RAW HYPERVOLUME ===
+DEBUG: Original solutions (sample): [[335.14, 788.0, -7.0, -7.0], [348.85, 783.0, -7.0, -7.0], [395.38, 782.0, -7.0, -7.0]]
+DEBUG: Reference point: [550.0, 924.0000000000001, -0.9, -0.9]
+DEBUG: Directly contributing points: 63 of 63
+DEBUG: Direct raw hypervolume: 3488720.9943999993
+DEBUG: 
+=== CALCULATING NORMALIZED HYPERVOLUME ===
+DEBUG: Ideal point for normalization: [0.0, 60.0, -1.0, -1.0]
+DEBUG: Nadir point for normalization: [500.0, 840.0, -8.0, -7.0]
+DEBUG: Normalized points (sample): [[0.67028, 0.9333333333333333, 0.8571428571428571, 1.0], [0.6977000000000001, 0.926923076923077, 0.8571428571428571, 1.0], [0.79076, 0.9256410256410257, 0.8571428571428571, 1.0]]
+DEBUG: Normalized reference: [1.1, 1.1076923076923078, -0.014285714285714282, -0.016666666666666663]
+DEBUG: Points in minimization format (sample): [[0.67028, 0.9333333333333333, -0.8571428571428571, -1.0], [0.6977000000000001, 0.926923076923077, -0.8571428571428571, -1.0], [0.79076, 0.9256410256410257, -0.8571428571428571, -1.0]]
+DEBUG: Reference in minimization format: [1.1, 1.1076923076923078, 0.014285714285714282, 0.016666666666666663]
+DEBUG: Contributing points: 63 of 63
+DEBUG: Normalized hypervolume: 0.17548090698412697
+NSGA-II: Raw Hypervolume = 3488720.9943999993, Normalized Hypervolume = 0.17548090698412697, Solutions = 63
+Metrics saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/metrics.csv
+DEBUG: 
+=== CALCULATING DIRECT RAW HYPERVOLUME ===
+DEBUG: Original solutions (sample): [[335.14, 788.0, -7.0, -7.0], [348.85, 783.0, -7.0, -7.0], [395.38, 782.0, -7.0, -7.0]]
+DEBUG: Reference point: [550.0, 924.0000000000001, -0.9, -0.9]
+DEBUG: Directly contributing points: 63 of 63
+DEBUG: Direct raw hypervolume: 3488720.9943999993
+DEBUG: 
+=== CALCULATING NORMALIZED HYPERVOLUME ===
+DEBUG: Ideal point for normalization: [0.0, 60.0, -1.0, -1.0]
+DEBUG: Nadir point for normalization: [500.0, 840.0, -8.0, -7.0]
+DEBUG: Normalized points (sample): [[0.67028, 0.9333333333333333, 0.8571428571428571, 1.0], [0.6977000000000001, 0.926923076923077, 0.8571428571428571, 1.0], [0.79076, 0.9256410256410257, 0.8571428571428571, 1.0]]
+DEBUG: Normalized reference: [1.1, 1.1076923076923078, -0.014285714285714282, -0.016666666666666663]
+DEBUG: Points in minimization format (sample): [[0.67028, 0.9333333333333333, -0.8571428571428571, -1.0], [0.6977000000000001, 0.926923076923077, -0.8571428571428571, -1.0], [0.79076, 0.9256410256410257, -0.8571428571428571, -1.0]]
+DEBUG: Reference in minimization format: [1.1, 1.1076923076923078, 0.014285714285714282, 0.016666666666666663]
+DEBUG: Contributing points: 63 of 63
+DEBUG: Normalized hypervolume: 0.17548090698412697
+Solutions used for NSGA-II saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/nsga-ii_hypervolume_input.csv
+Detailed report saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/hypervolume_report.txt
+Debug log saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/hypervolume_debug.log

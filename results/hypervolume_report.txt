@@ -1,0 +1,36 @@
+Hypervolume Calculation Report
+============================
+
+Implementation following:
+1. 'A Faster Algorithm for Calculating Hypervolume' (While et al., 2006)
+2. 'Performance Assessment of Multiobjective Optimizers' (Zitzler et al., 2003)
+3. 'Adjusting normalization bounds to improve hypervolume' (Wang et al., 2023)
+
+Problem-specific constants used for normalization:
+- Ideal point: [0.0, 60.0, 10.0, 10.0]
+- Nadir point: [500.0, 840.0, 1.0, 1.0]
+
+Reference point: [550.0, 924.0000000000001, -0.9, -0.9]
+(Note: For maximization objectives, values are stored as negated values)
+
+Algorithm Results:
+-----------------
+NSGA-II:
+  - Solutions: 63
+  - Raw Hypervolume: 3488720.9943999993
+  - Normalized Hypervolume: 0.17548090698412697
+
+
+Hypervolume Interpretation:
+-------------------------
+The hypervolume indicator measures the volume of the objective space that is dominated
+by the Pareto front approximation and bounded by the reference point. As described in
+Zitzler et al. (2003), p.125, it is 'the only unary indicator we are aware of that is capable
+of detecting that A is not worse than B for all pairs (A,B).'
+
+The normalized hypervolume scales this value to a range closer to [0,1], where:
+  - 0 represents the worst possible performance
+  - 1 represents a theoretically ideal performance
+
+Higher hypervolume values indicate better approximation sets, capturing both
+convergence to the true Pareto front and diversity of solutions.
