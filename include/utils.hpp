@@ -34,7 +34,7 @@ struct TransportMatrices {
 struct Config {
     static constexpr double COST_CAR_PER_KM = 6.0;     // R$6 por km
     static constexpr int DAILY_TIME_LIMIT = 840;       // 14 horas em minutos
-    static constexpr int WALK_TIME_PREFERENCE = 20;    // preferência por caminhada abaixo de 15 min
+    static constexpr int WALK_TIME_PREFERENCE = 15;    // preferência por caminhada abaixo de 15 min
     static constexpr double TOLERANCE = 0.1;     // 10% de tolerância (para penalização)
 
     struct WeightConfig {

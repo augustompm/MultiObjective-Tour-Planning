@@ -39,4 +39,4 @@ echo "Acesse em seu navegador: http://127.0.0.1:8050/"
 echo "Pressione Ctrl+C para encerrar o servidor."
 echo ""
 
-python3 results_visualizer.py
+python3 app.py

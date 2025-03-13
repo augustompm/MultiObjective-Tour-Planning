@@ -3,8 +3,8 @@
 var dim; // the size of dimension of problem
 var doc; // Document size
 var minObj = [], maxObj = []; // min and max of Objectives
-var intervals = []; // The function who calculates and map the values on the arcs
-var Data = [];
+var rawData = []; // Original non-normalized data
+var Data = []; // Normalized data for display
 var selectingPoints = []; // for frame of selection
 var sRect; // rectangle of selection
 var linksCoord = []; // This array saves the ID, start point and end point of each link
@@ -16,131 +16,174 @@ var objectiveNames = [
     "Bairros"
 ];
 
+// Define if each objective is to be minimized (true) or maximized (false)
+var toMinimize = [true, true, false, false];
+
 function Arcs() {
-    if (Data.length !== 0) {
-        dim = Object.keys(Data[0]).length;
-    } else {
-        // Default to 4 objectives if no data
-        dim = 4;
+    if (Data.length === 0 && rawData.length > 0) {
+        // Process data if we received raw data but haven't normalized it yet
+        processData();
     }
     
-    // Criar rótulos com valores concretos em vez de min/max
-    var labelValues = [
-        ["R$0", "R$60", "R$120", "R$179", "R$239"], // Custo Total - valores específicos
-        ["60min", "221min", "382min", "543min", "704min"], // Tempo Total - valores específicos
-        ["1", "2", "3", "4", "5", "6", "7", "8"], // Atrações - valores inteiros
-        ["1", "2", "3", "4", "5", "6"] // Bairros - valores inteiros
-    ];
-    
-    // Find the min and max of each objective
-    for (i = 0; i < dim; i++) {
-        var objKey = "Obj" + (i + 1);
-        var temp = Data.map(function(obj) { return obj[objKey]; });
-        minObj[i] = Math.min.apply(null, temp);
-        maxObj[i] = Math.max.apply(null, temp);
-        
-        // Para objetivos de maximização (Atrações e Bairros),
-        // os valores são armazenados como negativos
-        if (i >= 2) {
-            for (z = 0; z < temp.length; z++) {
-                // Garantir que usamos o valor absoluto para normalização
-                Data[z][objKey] = -temp[z]; // Converter para positivo para normalização
-            }
-            
-            // Ajustar min/max para positivo
-            var tempMin = -maxObj[i];
-            var tempMax = -minObj[i];
-            minObj[i] = tempMin;
-            maxObj[i] = tempMax;
-        }
+    if (Data.length === 0) {
+        // If still no data, use dummy data
+        createDummyData();
+        processData();
     }
     
-    // Normalizar dados para [0,1]
-    for (i = 0; i < dim; i++) {
-        var objKey = "Obj" + (i + 1);
-        for (z = 0; z < Data.length; z++) {
-            var value;
-            
-            if (i >= 2) {
-                // Objetivos de maximização já foram convertidos para positivo acima
-                value = Data[z][objKey];
-            } else {
-                value = Data[z][objKey];
-            }
-            
-            // Normalização para [0,1] - importante: min é 0 e max é 1
-            Data[z][objKey] = (value - minObj[i]) / (maxObj[i] - minObj[i]);
-        }
-    }
+    dim = Object.keys(Data[0]).length;
     
-    var min = 0;
-    var max = 1;
+    // Setup dimensions and layout
     var inR = (doc.clientHeight - 150) / 2; // Inner Radius
+    var outR = inR + 30; // Outer Radius
     var X = doc.clientWidth / 2;
     var Y = doc.clientHeight / 2;
-    var usedEnv = 360; // The usable Environment - full circle
-    var arcAngle = usedEnv / dim; // The angle of each Arc
-    var Angles = [];
-    var arcs = [];
-
-    // Calculate angles for a complete circle with gaps
-    for (i = 0; i < dim; i++) {
+    
+    // Calculate angles for a complete circle with even spacing
+    var arcAngles = [];
+    for (var i = 0; i < dim; i++) {
         // Create gaps between objectives
         var startAngle = i * (360/dim) + 5;  // Add a small gap (5 degrees)
         var endAngle = (i+1) * (360/dim) - 5; // Subtract a small gap (5 degrees)
-        Angles[i] = [startAngle, endAngle];
-        arcs[i] = d3.svg.arc()
-            .innerRadius(inR)
-            .outerRadius(inR + 25)  // Make the arcs thicker
-            .startAngle(Angles[i][0] * (Math.PI / 180))
-            .endAngle(Angles[i][1] * (Math.PI / 180));
+        arcAngles[i] = {
+            start: startAngle * (Math.PI / 180),
+            end: endAngle * (Math.PI / 180)
+        };
     }
     
-    // Draw the outer circle first
-    d3.select('#mainSVG').append('circle')
-        .attr('cx', X)
-        .attr('cy', Y)
-        .attr('r', inR + 40)
-        .attr('fill', 'none')
-        .attr('stroke', '#e74c3c')
-        .attr('stroke-width', 3);
-
+    // Draw background elements
+    drawBackground(X, Y, inR, outR, arcAngles);
+    
+    // Create arc generators
+    var arcs = [];
+    for (i = 0; i < dim; i++) {
+        arcs[i] = d3.svg.arc()
+            .innerRadius(inR)
+            .outerRadius(outR)
+            .startAngle(arcAngles[i].start)
+            .endAngle(arcAngles[i].end);
+    }
+    
+    // Draw arcs
     var arcPaths = d3.select('#mainSVG').selectAll('.arcPath')
         .data(arcs)
         .enter()
         .append('path')
         .attr('class', 'arcPath')
         .attr('id', function(d, i) {
-            return 'obj' + i.toString();
+            return 'obj' + i;
         })
-        .attr('d', function(d, i) {
-            return arcs[i]();
-        })
-        .attr('fill', '#3b5ddb') // Blue to match the example image
+        .attr('d', function(d) { return d(); })
         .attr('transform', 'translate(' + X + ',' + Y + ')')
         .on('mouseover', function(d, i) {
-            var idx = i;
-            d3.selectAll('.arcPath').attr('opacity', 0.2);
-            var links = d3.selectAll('.link');
-            d3.select(this).attr('opacity', 1);
-            links[0].forEach(function(d, i) {
-                if ((d.id).search(idx) != -1) {
-                    d3.selectAll('#' + d.id).attr('class', 'linkOnObj');
-                }
-            });
+            highlightObjective(i);
         })
-        .on('mouseout', function(d, i) {
-            mainSVG.selectAll('.arcPath').attr('opacity', 1);
-            mainSVG.selectAll('.linkOnObj').attr('class', 'link');
+        .on('mouseout', function() {
+            unhighlightObjectives();
         });
+    
+    // Add labels for each objective
+    addObjectiveLabels(X, Y, inR, outR, arcAngles);
+    
+    // Create points for each solution on each arc
+    var solutionPoints = calculateSolutionPoints(X, Y, inR, outR, arcAngles);
+    
+    // Draw lines connecting the solutions across objectives
+    drawConnectingLines(solutionPoints, X, Y);
+    
+    // Store line coordinates for selection functionality
+    storeLineCoordinates();
+}
 
-    // Adicionar rótulos principais para cada objetivo
+function processData() {
+    // Create a deep copy of the raw data to preserve original values
+    Data = JSON.parse(JSON.stringify(rawData));
+    
+    dim = Object.keys(Data[0]).length;
+    
+    // First pass: find min/max for each objective
+    for (var i = 0; i < dim; i++) {
+        var objKey = "Obj" + (i + 1);
+        var values = Data.map(function(obj) { return obj[objKey]; });
+        minObj[i] = Math.min.apply(null, values);
+        maxObj[i] = Math.max.apply(null, values);
+    }
+    
+    // Second pass: normalize data
     for (i = 0; i < dim; i++) {
-        // Add objective name labels outside the arcs
-        var middleAngle = ((Angles[i][0] + Angles[i][1]) / 2) * (Math.PI / 180);
-        var labelRadius = inR + 60;  // Place labels further outside
-        var labelX = X + Math.sin(middleAngle) * labelRadius;
-        var labelY = Y - Math.cos(middleAngle) * labelRadius;
+        var objKey = "Obj" + (i + 1);
+        
+        // If there's no range, set a default value to avoid division by zero
+        var range = maxObj[i] - minObj[i];
+        if (range === 0) range = 1;
+        
+        for (var j = 0; j < Data.length; j++) {
+            // Normalize to [0,1] - for all objectives, 1 is best
+            var normalized = (Data[j][objKey] - minObj[i]) / range;
+            
+            // For maximization objectives, invert the normalization
+            if (!toMinimize[i]) {
+                normalized = 1 - normalized;
+            }
+            
+            Data[j][objKey] = normalized;
+        }
+    }
+}
+
+function createDummyData() {
+    // Create dummy data if none is provided
+    rawData = [];
+    for (var i = 0; i < 20; i++) {
+        var item = {};
+        for (var j = 1; j <= 4; j++) {
+            var objKey = "Obj" + j;
+            
+            if (j <= 2) {
+                // Minimization objectives (cost, time)
+                item[objKey] = Math.random() * 200 + 50;
+            } else {
+                // Maximization objectives (attractions, neighborhoods)
+                item[objKey] = Math.floor(Math.random() * 8) + 1;
+            }
+        }
+        rawData.push(item);
+    }
+}
+
+function drawBackground(X, Y, inR, outR, arcAngles) {
+    // Draw outer circle
+    d3.select('#mainSVG').append('circle')
+        .attr('cx', X)
+        .attr('cy', Y)
+        .attr('r', outR + 10)
+        .attr('fill', 'none')
+        .attr('stroke', '#e74c3c')
+        .attr('stroke-width', 3);
+    
+    // Add subtle background for arcs
+    for (var i = 0; i < dim; i++) {
+        d3.select('#mainSVG').append('path')
+            .attr('d', d3.svg.arc()
+                .innerRadius(inR)
+                .outerRadius(outR)
+                .startAngle(arcAngles[i].start)
+                .endAngle(arcAngles[i].end)
+            )
+            .attr('transform', 'translate(' + X + ',' + Y + ')')
+            .attr('fill', '#e8eaf6')
+            .attr('stroke', '#c5cae9')
+            .attr('stroke-width', 1);
+    }
+}
+
+function addObjectiveLabels(X, Y, inR, outR, arcAngles) {
+    for (var i = 0; i < dim; i++) {
+        // Add objective name
+        var midAngle = (arcAngles[i].start + arcAngles[i].end) / 2;
+        var labelRadius = outR + 40;
+        var labelX = X + Math.sin(midAngle) * labelRadius;
+        var labelY = Y - Math.cos(midAngle) * labelRadius;
         
         d3.select('#mainSVG').append('text')
             .attr('class', 'objectiveLabel')
@@ -148,274 +191,263 @@ function Arcs() {
             .attr('y', labelY)
             .attr('text-anchor', 'middle')
             .attr('alignment-baseline', 'middle')
-            .attr('font-weight', 'bold')
-            .attr('font-size', '16px')
             .text(objectiveNames[i]);
         
-        // Calcular posições para marcadores de valores nos arcos
-        // Para cada arco, adicionaremos 2-3 marcadores principais
-        var numMarkers = (i < 2) ? 5 : (i === 2 ? 8 : 6); // Número de marcadores baseado no range de valores
-        var markers = [];
+        // Add min/max labels
+        var minMaxLabels = [];
         
-        // Determinar os valores e posições dos marcadores
-        for (j = 0; j < numMarkers; j++) {
-            var markerPos;
-            
-            if (i < 2) {
-                // Custo e Tempo (minimização)
-                markerPos = j / (numMarkers - 1); // Valores mapeados para [0,1]
-            } else {
-                // Atrações e Bairros (maximização)
-                markerPos = j / (numMarkers - 1); // Valores inteiros 1-8 ou 1-6
-            }
-            
-            markers.push({
-                position: markerPos,
-                label: labelValues[i][j]
-            });
-        }
-        
-        // Adicionar marcadores (min, max, valores intermediários)
-        for (j = 0; j < markers.length; j++) {
-            // Determinar posição no arco
-            var markerAnglePercent;
-            if (i < 2) {
-                // Para minimização (Custo, Tempo), valores menores (melhores) ficam à direita do arco
-                markerAnglePercent = 1 - markers[j].position;
-            } else {
-                // Para maximização (Atrações, Bairros), valores maiores (melhores) ficam à direita do arco
-                markerAnglePercent = markers[j].position;
-            }
-            
-            var markerAngle = Angles[i][0] + markerAnglePercent * (Angles[i][1] - Angles[i][0]);
-            markerAngle = markerAngle * (Math.PI / 180);
-            
-            // Posição do texto
-            var markerX = X + Math.sin(markerAngle) * (inR - 15);
-            var markerY = Y - Math.cos(markerAngle) * (inR - 15);
-            
-            // Se for o primeiro ou último marcador, adicione um pouco mais de espaço
-            if (j === 0 || j === markers.length - 1) {
-                if (j === 0) {
-                    // Valor mínimo - ajustar posição
-                    if (i < 2) {
-                        markerX = X + Math.sin(markerAngle) * (inR + 35);
-                        markerY = Y - Math.cos(markerAngle) * (inR + 35);
-                    } else {
-                        markerX = X + Math.sin(markerAngle) * (inR - 35);
-                        markerY = Y - Math.cos(markerAngle) * (inR - 35);
-                    }
-                } else {
-                    // Valor máximo - ajustar posição
-                    if (i < 2) {
-                        markerX = X + Math.sin(markerAngle) * (inR - 35);
-                        markerY = Y - Math.cos(markerAngle) * (inR - 35);
-                    } else {
-                        markerX = X + Math.sin(markerAngle) * (inR + 35);
-                        markerY = Y - Math.cos(markerAngle) * (inR + 35);
-                    }
-                }
-                
-                // Adicionar prefixo min/max para o primeiro e último valores
-                var prefix = (j === 0) ? "min: " : "max: ";
-                
-                // Para minimização, inverter prefixos
-                if (i < 2) {
-                    prefix = (j === 0) ? "max: " : "min: ";
-                }
-                
-                d3.select('#mainSVG').append('text')
-                    .attr('class', 'objectiveValue')
-                    .attr('x', markerX)
-                    .attr('y', markerY)
-                    .attr('text-anchor', 'middle')
-                    .attr('alignment-baseline', 'middle')
-                    .attr('font-size', '10px')
-                    .text(prefix + markers[j].label);
-            }
-        }
-    }
-
-    // Map the objectives' interval on the arcs
-    var tempPath = [];
-    for (i = 0; i < arcPaths[0].length; i++) {
-        tempPath[i] = d3.select(arcPaths[0][i]).node();
-    }
-    
-    // Define as escalas para mapear valores [0,1] para pontos no arco
-    var scales = [];
-    for (i = 0; i < dim; i++) {
-        // Para cada arco, criar uma escala para o seu comprimento
-        var pathLength = tempPath[i].getTotalLength();
         if (i < 2) {
-            // Para minimização, inverter a escala (maior valor = início do arco)
-            scales[i] = d3.scale.linear().domain([0, 1]).range([pathLength, 0]);
-        } else {
-            // Para maximização, escala normal (maior valor = fim do arco)
-            scales[i] = d3.scale.linear().domain([0, 1]).range([0, pathLength]);
-        }
-    }
-
-    // Finding the point on the arcs
-    var normVal = []; // Finding the normal value of each items on the path before calculating of coordinate
-    var Points = []; // The Points of each value on the Arcs
-    for (i = 0; i < Data.length; i++) {
-        normVal[i] = new Array(dim);
-        Points[i] = new Array(dim);
-        for (j = 0; j < dim; j++) {
-            var objKey = "Obj" + (j + 1);
-            normVal[i][j] = scales[j](Data[i][objKey]);
-            Points[i][j] = tempPath[j].getPointAtLength(normVal[i][j]);
-            Points[i][j].x += X;
-            Points[i][j].y += Y;
-        }
-    }
-
-    // Drawing Connections
-    var lineFunc = d3.svg.line()
-        .x(function(d) { return d.x; })
-        .y(function(d) { return d.y; })
-        .interpolate('basis'); // Use basis interpolation for smoother curves
-    
-    // Draw all possible connections between objectives for all solutions
-    for (j1 = 0; j1 < dim; j1++) {
-        for (j2 = 0; j2 < dim; j2++) {
-            if (j1 != j2) { // Don't connect an objective to itself
-                for (i = 0; i < Points.length; i++) {
-                    // Create an array of points with control points for smoother curves
-                    var tempPoints = [
-                        Points[i][j1],
-                        {x: X + (Points[i][j1].x - X) * 0.3, y: Y + (Points[i][j1].y - Y) * 0.3},
-                        {x: X + (Points[i][j2].x - X) * 0.3, y: Y + (Points[i][j2].y - Y) * 0.3},
-                        Points[i][j2]
-                    ];
-
-                    d3.select('#mainSVG').append('path')
-                        .attr('class', 'link')
-                        .attr('id', function(d, idx) {
-                            return 'link' + j1.toString() + "-" + j2.toString() + "-idx" + i.toString();
-                        })
-                        .attr('d', lineFunc(tempPoints))
-                        .on('mouseover', function(d, idx) {
-                            var coordinate = d3.mouse(this);
-                            d3.select(this).attr('class', 'linkOver');
-                            d3.selectAll('.link').attr('class', 'linkNoOver');
-                            
-                            // Make tooltip
-                            var info = []; // The information of each link
-                            var idText = d3.select(this).attr('id');
-                            var O1 = +idText[4];
-                            var O2 = +idText[6];
-                            var solutionIdx = +idText.substr(11);
-                            
-                            var objKey1 = "Obj" + (O1 + 1);
-                            var objKey2 = "Obj" + (O2 + 1);
-                            
-                            // Get the original (non-normalized) values
-                            var originalValue1, originalValue2;
-                            
-                            if (O1 < 2) {
-                                // Custo ou tempo (minimização)
-                                originalValue1 = Data[solutionIdx][objKey1] * (maxObj[O1] - minObj[O1]) + minObj[O1];
-                            } else {
-                                // Atrações ou bairros (maximização)
-                                originalValue1 = Math.round(Data[solutionIdx][objKey1] * (maxObj[O1] - minObj[O1]) + minObj[O1]);
-                            }
-                            
-                            if (O2 < 2) {
-                                // Custo ou tempo (minimização)
-                                originalValue2 = Data[solutionIdx][objKey2] * (maxObj[O2] - minObj[O2]) + minObj[O2];
-                            } else {
-                                // Atrações ou bairros (maximização)
-                                originalValue2 = Math.round(Data[solutionIdx][objKey2] * (maxObj[O2] - minObj[O2]) + minObj[O2]);
-                            }
-                            
-                            info[0] = originalValue1.toFixed(2);
-                            info[1] = originalValue2.toFixed(2);
-                            makeTooltip(info, O1, O2, coordinate, solutionIdx + 1);
-                        })
-                        .on('mouseout', function(d, idx) {
-                            d3.select(this).attr('class', 'link');
-                            d3.selectAll('.linkNoOver').attr('class', 'link');
-                            d3.selectAll('.tooltip').remove();
-                        });
+            // Continuous objectives (cost, time)
+            minMaxLabels = [
+                {
+                    value: toMinimize[i] ? minObj[i] : maxObj[i],
+                    position: 0.9,
+                    prefix: 'min: '
+                },
+                {
+                    value: toMinimize[i] ? maxObj[i] : minObj[i],
+                    position: 0.1,
+                    prefix: 'max: '
                 }
-            }
+            ];
+        } else {
+            // Integer objectives (attractions, neighborhoods)
+            minMaxLabels = [
+                {
+                    value: Math.round(toMinimize[i] ? minObj[i] : maxObj[i]),
+                    position: 0.9,
+                    prefix: 'min: '
+                },
+                {
+                    value: Math.round(toMinimize[i] ? maxObj[i] : minObj[i]),
+                    position: 0.1,
+                    prefix: 'max: '
+                }
+            ];
         }
-    }
-
-    var tempLinks = mainSVG.selectAll('.link');
-    for (i = 0; i < tempLinks[0].length; i++) {
-        linksCoord[i] = new Array(3);
-        linksCoord[i][0] = tempLinks[0][i].id;
-        linksCoord[i][1] = tempLinks[0][i].getPointAtLength(0);
-        linksCoord[i][2] = tempLinks[0][i].getPointAtLength(tempLinks[0][i].getTotalLength());
+        
+        // Add the min/max labels
+        minMaxLabels.forEach(function(label) {
+            var angle = arcAngles[i].start + (arcAngles[i].end - arcAngles[i].start) * label.position;
+            var markerX = X + Math.sin(angle) * (outR - 15);
+            var markerY = Y - Math.cos(angle) * (outR - 15);
+            
+            var displayValue = label.value;
+            if (i === 0) displayValue = "R$" + Math.round(displayValue);
+            if (i === 1) displayValue = Math.round(displayValue) + "min";
+            
+            d3.select('#mainSVG').append('text')
+                .attr('class', 'objectiveValue')
+                .attr('x', markerX)
+                .attr('y', markerY)
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .text(label.prefix + displayValue);
+        });
     }
 }
 
-function makeTooltip(info, O1, O2, coordinate, solutionId) {
-    var toolTipSVG = d3.select('#mainSVG').append('svg')
-        .attr('class', 'tooltip')
-        .attr('width', 240)
-        .attr('height', 100)
-        .attr('x', coordinate[0] + 15)
-        .attr('y', coordinate[1] - 20);
-        
-    toolTipSVG.append('rect')
-        .attr('width', 240)
-        .attr('height', 100)
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('stroke', 'black')
-        .attr('stroke-width', 2)
-        .attr('stroke-opacity', 0.8)
-        .attr('opacity', 0.9)
-        .attr('fill', '#f8f9fa');
-
-    var toolText = toolTipSVG.append('text')
-        .attr('class', 'tooltipTitle')
-        .attr('x', 10)
-        .attr('y', 20)
-        .text('Solução #' + solutionId);
-
-    var info1 = [
-        objectiveNames[O1] + ': ',
-        info[0],
-        objectiveNames[O2] + ': ',
-        info[1]
-    ];
+function calculateSolutionPoints(X, Y, inR, outR, arcAngles) {
+    var solutionPoints = [];
     
-    toolText.selectAll('tspan')
-        .data(info1)
-        .enter()
-        .append('tspan')
-        .attr('class', function(d, idx) {
-            if (idx == 0 || idx == 2)
-                return 'tooltipTitle';
-            else
-                return 'tooltipVal';
-        })
-        .attr('dy', function(d, idx) {
-            if (idx == 0 || idx == 2)
-                return 20;
-            else
-                return 0;
-        })
+    // For each solution
+    for (var i = 0; i < Data.length; i++) {
+        solutionPoints[i] = [];
+        
+        // For each objective
+        for (var j = 0; j < dim; j++) {
+            var objKey = "Obj" + (j + 1);
+            var normalizedValue = Data[i][objKey];
+            
+            // Calculate position on arc
+            var angle = arcAngles[j].start + (arcAngles[j].end - arcAngles[j].start) * normalizedValue;
+            var radius = (inR + outR) / 2; // Middle of the arc
+            
+            var point = {
+                x: X + Math.sin(angle) * radius,
+                y: Y - Math.cos(angle) * radius,
+                objective: j,
+                solutionIndex: i,
+                value: normalizedValue
+            };
+            
+            solutionPoints[i][j] = point;
+        }
+    }
+    
+    return solutionPoints;
+}
+
+function drawConnectingLines(solutionPoints, X, Y) {
+    // Create a line function that will generate curves passing through the center
+    var lineGenerator = d3.svg.line()
+        .x(function(d) { return d.x; })
+        .y(function(d) { return d.y; })
+        .interpolate('bundle')  // Use bundle interpolation for star-like pattern
+        .tension(0.5);  // Adjust tension for more curved lines
+    
+    // Draw lines connecting ALL objectives for each solution
+    for (var i = 0; i < solutionPoints.length; i++) {
+        // For each pair of objectives
+        for (var j = 0; j < dim; j++) {
+            for (var k = j + 1; k < dim; k++) {
+                var points = [
+                    solutionPoints[i][j],  // Source point
+                    {x: X, y: Y},           // Center point for the curve
+                    solutionPoints[i][k]   // Target point
+                ];
+                
+                d3.select('#mainSVG').append('path')
+                    .attr('class', 'link')
+                    .attr('id', 'link' + j + '-' + k + '-idx' + i)
+                    .attr('d', lineGenerator(points))
+                    .on('mouseover', function() {
+                        var linkId = d3.select(this).attr('id');
+                        highlightLink(linkId);
+                    })
+                    .on('mouseout', function() {
+                        unhighlightLinks();
+                    });
+            }
+        }
+    }
+}
+
+function highlightObjective(objectiveIndex) {
+    d3.selectAll('.arcPath').attr('opacity', 0.2);
+    d3.select('#obj' + objectiveIndex).attr('opacity', 1);
+    
+    d3.selectAll('.link').each(function() {
+        var linkId = d3.select(this).attr('id');
+        if (linkId && (linkId.indexOf('-' + objectiveIndex + '-') > -1 || linkId.indexOf(objectiveIndex + '-') === 4)) {
+            d3.select(this).attr('class', 'linkOnObj');
+        }
+    });
+}
+
+function unhighlightObjectives() {
+    d3.selectAll('.arcPath').attr('opacity', 1);
+    d3.selectAll('.linkOnObj').attr('class', 'link');
+}
+
+function highlightLink(linkId) {
+    d3.select('#' + linkId).attr('class', 'linkOver');
+    d3.selectAll('.link:not(.linkOver)').attr('class', 'linkNoOver');
+    
+    // Extract solution index and objectives from link ID
+    var parts = linkId.split('-');
+    if (parts.length >= 3) {
+        var sourceObj = parseInt(parts[0].replace('link', ''));
+        var targetObj = parseInt(parts[1]);
+        var solutionIdx = parseInt(parts[2].replace('idx', ''));
+        
+        // Show tooltip with solution information
+        var coordinate = d3.mouse(d3.select('#mainSVG').node());
+        showTooltip(coordinate, solutionIdx, sourceObj, targetObj);
+    }
+}
+
+function unhighlightLinks() {
+    d3.selectAll('.linkOver').attr('class', 'link');
+    d3.selectAll('.linkNoOver').attr('class', 'link');
+    d3.selectAll('.tooltip').remove();
+}
+
+function showTooltip(coordinate, solutionIdx, sourceObj, targetObj) {
+    // Get original (non-normalized) values
+    var sourceKey = "Obj" + (sourceObj + 1);
+    var targetKey = "Obj" + (targetObj + 1);
+    
+    var sourceValue, targetValue;
+    
+    if (toMinimize[sourceObj]) {
+        sourceValue = minObj[sourceObj] + (1 - Data[solutionIdx][sourceKey]) * (maxObj[sourceObj] - minObj[sourceObj]);
+    } else {
+        sourceValue = minObj[sourceObj] + Data[solutionIdx][sourceKey] * (maxObj[sourceObj] - minObj[sourceObj]);
+    }
+    
+    if (toMinimize[targetObj]) {
+        targetValue = minObj[targetObj] + (1 - Data[solutionIdx][targetKey]) * (maxObj[targetObj] - minObj[targetObj]);
+    } else {
+        targetValue = minObj[targetObj] + Data[solutionIdx][targetKey] * (maxObj[targetObj] - minObj[targetObj]);
+    }
+    
+    // Round integer objectives
+    if (sourceObj >= 2) sourceValue = Math.round(sourceValue);
+    if (targetObj >= 2) targetValue = Math.round(targetValue);
+    
+    // Format display values
+    var sourceDisplay = sourceValue.toFixed(2);
+    var targetDisplay = targetValue.toFixed(2);
+    
+    if (sourceObj === 0) sourceDisplay = "R$ " + sourceDisplay;
+    if (sourceObj === 1) sourceDisplay += " min";
+    if (targetObj === 0) targetDisplay = "R$ " + targetDisplay;
+    if (targetObj === 1) targetDisplay += " min";
+    
+    // Create tooltip
+    var tooltip = d3.select('#mainSVG').append('g')
+        .attr('class', 'tooltip')
+        .attr('transform', 'translate(' + (coordinate[0] + 15) + ',' + (coordinate[1] - 20) + ')');
+    
+    tooltip.append('rect')
+        .attr('width', 240)
+        .attr('height', 110)
+        .attr('rx', 5)
+        .attr('ry', 5)
+        .attr('fill', 'white')
+        .attr('stroke', '#333')
+        .attr('stroke-width', 1);
+    
+    // Add solution number
+    tooltip.append('text')
+        .attr('x', 10)
+        .attr('y', 25)
+        .attr('class', 'tooltipTitle')
+        .text('Solução #' + (solutionIdx + 1));
+    
+    // Add source objective
+    tooltip.append('text')
         .attr('x', 20)
-        .attr('dx', function(d, idx) {
-            if (idx == 0 || idx == 2)
-                return 0;
-            else
-                return 10;
-        })
-        .text(function(d, idx) {
-            // Add units
-            if (idx == 1 && O1 == 0) return "R$ " + d;
-            if (idx == 1 && O1 == 1) return d + " min";
-            if (idx == 3 && O2 == 0) return "R$ " + d;
-            if (idx == 3 && O2 == 1) return d + " min";
-            return d;
-        });
+        .attr('y', 50)
+        .attr('class', 'tooltipTitle')
+        .text(objectiveNames[sourceObj] + ': ');
+    
+    tooltip.append('text')
+        .attr('x', 150)
+        .attr('y', 50)
+        .attr('class', 'tooltipVal')
+        .text(sourceDisplay);
+    
+    // Add target objective
+    tooltip.append('text')
+        .attr('x', 20)
+        .attr('y', 75)
+        .attr('class', 'tooltipTitle')
+        .text(objectiveNames[targetObj] + ': ');
+    
+    tooltip.append('text')
+        .attr('x', 150)
+        .attr('y', 75)
+        .attr('class', 'tooltipVal')
+        .text(targetDisplay);
+}
+
+function storeLineCoordinates() {
+    var links = d3.selectAll('.link');
+    linksCoord = [];
+    
+    links.each(function(d, i) {
+        var path = d3.select(this);
+        var id = path.attr('id');
+        var length = this.getTotalLength();
+        
+        linksCoord.push([
+            id,
+            this.getPointAtLength(0),
+            this.getPointAtLength(length)
+        ]);
+    });
 }
 
 function mouseDown() {
@@ -478,23 +510,11 @@ function mouseMove() {
     
     for (i = 0; i < selectedLinks.length; i++) {
         mainSVG.select('#' + selectedLinks[i][0]).attr('class', 'selectedLink');
-        d3.selectAll('.selectedLink').moveToFront();
     }
     
-    d3.selection.prototype.moveToFront = function() {
-        return this.each(function() {
-            this.parentNode.appendChild(this);
-        });
-    };
-    
-    d3.selection.prototype.moveToBack = function() {
-        return this.each(function() {
-            var firstChild = this.parentNode.firstChild;
-            if (firstChild) {
-                this.parentNode.insertBefore(this, firstChild);
-            }
-        });
-    };
+    d3.selectAll('.selectedLink').each(function() {
+        this.parentNode.appendChild(this);
+    });
 }
 
 function Reset() {
@@ -502,3 +522,19 @@ function Reset() {
     mainSVG.selectAll('.selectedLink').attr('class', 'link');
     mainSVG.selectAll('.coloredLink').attr('class', 'link');
 }
+
+// Helper methods for d3 selections
+d3.selection.prototype.moveToFront = function() {
+    return this.each(function() {
+        this.parentNode.appendChild(this);
+    });
+};
+
+d3.selection.prototype.moveToBack = function() {
+    return this.each(function() {
+        var firstChild = this.parentNode.firstChild;
+        if (firstChild) {
+            this.parentNode.insertBefore(this, firstChild);
+        }
+    });
+};

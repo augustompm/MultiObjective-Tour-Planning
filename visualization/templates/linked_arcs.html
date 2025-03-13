@@ -3,12 +3,12 @@
   <head>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="{{ url_for('static', filename='js/linkedArc.js') }}"></script>
-    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Josefin+Slab">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
       body {
         margin: 0;
         padding: 0;
-        font-family: Arial, sans-serif;
+        font-family: 'Roboto', sans-serif;
         background-color: white;
       }
       .title-container {
@@ -31,55 +31,55 @@
         height: calc(100vh - 100px);
       }
       .tooltipTitle {
-        font-family: 'Arial';
-        font-size: 13px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
         font-weight: bold;
+        fill: #333;
       }
       .tooltipVal {
-        font-family: 'Josefin Slab';
-        font-size: 15px;
-        font-style: italic;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        fill: #3b5ddb;
+        font-weight: bold;
       }
       .selectionFrame {
-        stroke: gray;
-        stroke-width: 1px;
+        stroke: #3b5ddb;
+        stroke-width: 2px;
         stroke-dasharray: 4px;
-        stroke-opacity: 1;
-        fill: blue;
+        stroke-opacity: 0.8;
+        fill: #3b5ddb;
         opacity: 0.1;
       }
       .link {
         stroke: #3b5ddb;
-        stroke-width: 0.8;
+        stroke-width: 1.5;
         opacity: 0.15;
         fill: none;
-      }
-      .coloredLink {
-        stroke: #3b5ddb;
-        stroke-width: 1.5;
-        fill: none;
+        pointer-events: all;
       }
       .linkOver {
         stroke: #e74c3c;
-        stroke-width: 2;
+        stroke-width: 3;
         opacity: 1;
         fill: none;
+        pointer-events: all;
       }
       .linkNoOver {
         stroke: #3b5ddb;
         stroke-width: 0.5;
         opacity: 0.05;
         fill: none;
+        pointer-events: none;
       }
       .linkOnObj {
         stroke: #e74c3c;
-        stroke-width: 1;
-        opacity: 1;
+        stroke-width: 2;
+        opacity: 0.8;
         fill: none;
       }
       .selectedLink {
-        stroke: #2ecc71;
-        stroke-width: 1.5;
+        stroke: #e74c3c;
+        stroke-width: 2.5;
         opacity: 1;
         fill: none;
       }
@@ -88,6 +88,7 @@
         stroke-width: 0.5;
         opacity: 0.05;
         fill: none;
+        pointer-events: none;
       }
       .arcPath {
         cursor: pointer;
@@ -96,16 +97,17 @@
         stroke-width: 1;
       }
       .objectiveLabel {
-        font-family: Arial, sans-serif;
-        font-size: 14px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 16px;
         font-weight: bold;
         text-anchor: middle;
+        fill: #000;
       }
       .objectiveValue {
-        font-family: Arial, sans-serif;
-        font-size: 10px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 12px;
         fill: #333;
-        pointer-events: none; /* Permite cliques através do texto */
+        pointer-events: none;
       }
     </style>
     <title>Visualização de Linked Arcs</title>
@@ -117,31 +119,28 @@
     </div>
     <div id="mainDiv"></div>
     <script>
-      var doc; // Document Size
-      doc = document.getElementById('mainDiv');
-      var mainSVG = d3.select('#mainDiv').append('svg')
-                    .attr('id', 'mainSVG')
-                    .attr('width', doc.clientWidth)
-                    .attr('height', doc.clientHeight)
-                    .on("mousedown", mouseDown)
-                    .on("mouseup", mouseUp)
-                    .on('click', Reset);
-
-      // Define objective names
-      var objectiveNames = [
-        "Custo Total",
-        "Tempo Total",
-        "Atrações",
-        "Bairros"
-      ];
+      // Get document dimensions
+      var doc = document.getElementById('mainDiv');
       
+      // Create main SVG
+      var mainSVG = d3.select('#mainDiv')
+        .append('svg')
+        .attr('id', 'mainSVG')
+        .attr('width', doc.clientWidth)
+        .attr('height', doc.clientHeight)
+        .on("mousedown", mouseDown)
+        .on("mouseup", mouseUp)
+        .on('click', Reset);
+      
+      // Load data and draw the visualization
       d3.json("/data.json", function(error, data) {
         if (error) {
           console.error("Error loading data:", error);
           return;
         }
         
-        Data = data;
+        // Store data and initialize visualization
+        rawData = data;
         Arcs();
       });
     </script>
