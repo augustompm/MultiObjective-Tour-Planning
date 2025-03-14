@@ -250,11 +250,16 @@ void Metrics::exportToCSV(
     // Apply filtering to improve solution quality but preserve diversity
     std::vector<MOVNSSolution> filtered = filterDuplicatesAndInvalid(solutions);
     
-    // Define epsilon values for each objective
-    // Using relaxed values to maintain diversity
-    // [cost, time, -attractions, -neighborhoods]
+    // Ajustar epsilon dinamicamente para o conjunto final
     std::vector<double> epsilon = {10.0, 30.0, 0.1, 0.1};
     std::vector<MOVNSSolution> reduced = applyEpsilonDominance(filtered, epsilon);
+
+    // Refinando as soluções usando técnicas de clustering
+    if (reduced.size() > 60) {  
+        // Epsilon mais restritivo nas dimensões de custo e tempo
+        std::vector<double> refined_epsilon = {15.0, 45.0, 0.1, 0.1};
+        reduced = applyEpsilonDominance(reduced, refined_epsilon);
+    }
     
     // Sort solutions for presentation
     std::sort(reduced.begin(), reduced.end(), 

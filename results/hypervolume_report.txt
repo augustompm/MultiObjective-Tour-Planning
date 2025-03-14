@@ -15,10 +15,15 @@ Reference point: [550.0, 924.0000000000001, -0.9, -0.9]
 
 Algorithm Results:
 -----------------
+MOVNS:
+  - Solutions: 50
+  - Raw Hypervolume: 6399863.7583
+  - Normalized Hypervolume: 0.2848380306298397
+
 NSGA-II:
-  - Solutions: 63
-  - Raw Hypervolume: 3488720.9943999993
-  - Normalized Hypervolume: 0.17548090698412697
+  - Solutions: 74
+  - Raw Hypervolume: 2841650.1681
+  - Normalized Hypervolume: 0.16335249164224663
 
 
 Hypervolume Interpretation:

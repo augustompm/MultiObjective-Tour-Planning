@@ -659,16 +659,26 @@ def extract_algorithm_name(filename):
     Returns:
         Algorithm name in a readable format
     """
-    # Extract the base part before "-resultados.csv"
-    base_name = os.path.basename(filename).split('-resultados.csv')[0]
+    # Extract the base part before "resultados.csv"
+    # This handles both with and without hyphen
+    base_name = os.path.basename(filename).lower()
+    if "-resultados.csv" in base_name:
+        base_name = base_name.split('-resultados.csv')[0]
+    elif "resultados.csv" in base_name:
+        base_name = base_name.split('resultados.csv')[0]
+        # Remove trailing dash if present
+        if base_name.endswith('-'):
+            base_name = base_name[:-1]
     
     # Format algorithm name
-    if base_name.lower() == "nsga2":
+    if base_name == "nsga2":
         return "NSGA-II"
-    elif base_name.lower() == "moead":
+    elif base_name == "moead":
         return "MOEA/D"
-    elif base_name.lower() == "spea2":
+    elif base_name == "spea2":
         return "SPEA2"
+    elif base_name == "movns":
+        return "MOVNS"
     else:
         # Convert to title case and replace underscores with spaces
         return base_name.replace('_', ' ').title()
@@ -735,12 +745,22 @@ def main():
     if not tests_passed:
         debug_print("WARNING: Test cases failed. Hypervolume calculation may be incorrect.")
     
-    result_files = list(results_dir.glob("*-resultados.csv"))
+    # Look for files with more flexible patterns
+    result_files = []
+    patterns = ["*-resultados.csv", "*resultados.csv"]
+    for pattern in patterns:
+        result_files.extend(list(results_dir.glob(pattern)))
+    
+    # Remove duplicates
+    result_files = list(set(result_files))
+    
     if not result_files:
-        print("No result files found matching *-resultados.csv pattern")
+        print("No result files found matching *-resultados.csv or *resultados.csv patterns")
         return
     
-    print(f"Found {len(result_files)} result files")
+    print(f"Found {len(result_files)} result files:")
+    for file in result_files:
+        print(f" - {file.name}")
     
     # Define reference point
     # Following Zitzler et al. (2003), p.121, the reference point should be
@@ -751,6 +771,7 @@ def main():
         -NADIR_ATTRACTIONS * 0.9,  # Slightly worse than worst attractions (remember negation)
         -NADIR_NEIGHBORHOODS * 0.9 # Slightly worse than worst neighborhoods (remember negation)
     ]
+        
     print(f"Using reference point: {reference_point}")
     
     # Load solutions from all files

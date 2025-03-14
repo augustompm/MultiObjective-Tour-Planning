@@ -1,0 +1,39 @@
+Binary Coverage Calculation Report
+=================================
+
+Implementation following:
+1. 'Performance Assessment of Multiobjective Optimizers' (Zitzler et al., 2003)
+2. 'Evolutionary algorithms for solving multi-objective problems' (Coello et al., 2007)
+
+Binary Coverage Definition:
+-------------------------
+The binary coverage metric C(A,B) measures the fraction of solutions in set B
+that are weakly dominated by at least one solution in set A.
+
+Interpretation:
+- C(A,B) = 1 means that all solutions in B are weakly dominated by solutions in A
+- C(A,B) = 0 means that no solution in B is weakly dominated by any solution in A
+- In general, higher values of C(A,B) indicate that A is better than B
+- Note that C(A,B) and C(B,A) should be considered together for a complete comparison
+
+Algorithm Results:
+-----------------
+Summary Table:
+Algorithm A | Algorithm B | C(A,B) | Interpretation
+-----------|------------|---------|---------------
+NSGA-II     | MOVNS      | 0.1800 | NSGA-II weakly dominates some solutions of MOVNS
+MOVNS       | NSGA-II    | 0.3243 | MOVNS slightly dominates NSGA-II
+
+
+Detailed Results:
+----------------
+C(NSGA-II, MOVNS) = 0.1800
+- NSGA-II: 74 non-dominated solutions
+- MOVNS: 50 non-dominated solutions
+- 18.00% of MOVNS's solutions are weakly dominated by at least one solution from NSGA-II
+
+C(MOVNS, NSGA-II) = 0.3243
+- MOVNS: 50 non-dominated solutions
+- NSGA-II: 74 non-dominated solutions
+- 32.43% of NSGA-II's solutions are weakly dominated by at least one solution from MOVNS
+

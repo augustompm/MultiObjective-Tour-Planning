@@ -1,0 +1,16 @@
+Found 2 result files:
+ - nsga2-resultados.csv
+ - movns-resultados.csv
+Loaded 74 solutions. Sample: [[320.38, 810.0, -8.0, -7.0], [336.14, 743.0, -8.0, -7.0]]
+Loaded 74 solutions for NSGA-II
+Filtered to 74 non-dominated solutions
+Loaded 50 solutions. Sample: [[512.24, 831.0, -9.0, -8.0], [314.92, 795.0, -9.0, -7.0]]
+Loaded 50 solutions for MOVNS
+Filtered to 50 non-dominated solutions
+C(NSGA-II, MOVNS) = 0.1800
+This means 18.00% of MOVNS's solutions are weakly dominated by at least one solution from NSGA-II.
+C(MOVNS, NSGA-II) = 0.3243
+This means 32.43% of NSGA-II's solutions are weakly dominated by at least one solution from MOVNS.
+Binary coverage metrics saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/binary-coverage-metrics.csv
+Detailed report saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/binary_coverage_report.txt
+Debug log saved to /home/augusto/projects/MultiObjective-Tour-Planning/results/binary_coverage_debug.log
