@@ -1,30 +1,30 @@
-// File: movns-neighborhood.hpp
+// File: include/movns-neighborhood.hpp
 
 #pragma once
 
-#include "movns-solution.hpp"
 #include <vector>
+#include <memory>
 #include <random>
-#include <functional>
+#include "movns-solution.hpp"  // Include for MOVNSSolution
 
 namespace tourist {
 namespace movns {
 
 /**
  * @class Neighborhood
- * @brief Interface base para estruturas de vizinhança
+ * @brief Base abstract class for neighborhood operators in MOVNS
  */
 class Neighborhood {
 public:
     virtual ~Neighborhood() = default;
     
     /**
-     * @brief Gera um vizinho aleatório da solução atual
+     * @brief Generate a random neighbor from the current solution
      * 
-     * @param solution Solução atual
-     * @param all_attractions Todas as atrações disponíveis
-     * @param rng Gerador de números aleatórios
-     * @return MOVNSSolution Solução vizinha gerada
+     * @param solution Current solution
+     * @param all_attractions All available attractions
+     * @param rng Random number generator
+     * @return MOVNSSolution A neighboring solution
      */
     virtual MOVNSSolution generateRandomNeighbor(
         const MOVNSSolution& solution,
@@ -32,16 +32,16 @@ public:
         std::mt19937& rng) const = 0;
     
     /**
-     * @brief Nome da estrutura de vizinhança
+     * @brief Get the name of this neighborhood
      * 
-     * @return std::string Nome descritivo
+     * @return std::string Neighborhood name
      */
     virtual std::string getName() const = 0;
 };
 
 /**
  * @class TransportModeChangeNeighborhood
- * @brief Vizinhança N₁: Alteração de modo de transporte
+ * @brief Neighborhood that changes transport mode between two attractions
  */
 class TransportModeChangeNeighborhood : public Neighborhood {
 public:
@@ -51,13 +51,13 @@ public:
         std::mt19937& rng) const override;
     
     std::string getName() const override {
-        return "Transport Mode Change (N₁)";
+        return "TransportModeChange";
     }
 };
 
 /**
  * @class LocationReallocationNeighborhood
- * @brief Vizinhança N₂: Realocação de atrações
+ * @brief Neighborhood that moves an attraction to a different position in the sequence
  */
 class LocationReallocationNeighborhood : public Neighborhood {
 public:
@@ -67,13 +67,13 @@ public:
         std::mt19937& rng) const override;
     
     std::string getName() const override {
-        return "Location Reallocation (N₂)";
+        return "LocationReallocation";
     }
 };
 
 /**
  * @class LocationExchangeNeighborhood
- * @brief Vizinhança N₃: Troca de pares de locais
+ * @brief Neighborhood that swaps two attractions in the sequence
  */
 class LocationExchangeNeighborhood : public Neighborhood {
 public:
@@ -83,13 +83,13 @@ public:
         std::mt19937& rng) const override;
     
     std::string getName() const override {
-        return "Location Exchange (N₃)";
+        return "LocationExchange";
     }
 };
 
 /**
  * @class SubsequenceInversionNeighborhood
- * @brief Vizinhança N₄: Inversão de subsequência
+ * @brief Neighborhood that inverts a subsequence of attractions
  */
 class SubsequenceInversionNeighborhood : public Neighborhood {
 public:
@@ -99,13 +99,13 @@ public:
         std::mt19937& rng) const override;
     
     std::string getName() const override {
-        return "Subsequence Inversion (N₄)";
+        return "SubsequenceInversion";
     }
 };
 
 /**
  * @class LocationReplacementNeighborhood
- * @brief Vizinhança N₅: Substituição de local
+ * @brief Neighborhood that replaces an attraction with another one not in the solution
  */
 class LocationReplacementNeighborhood : public Neighborhood {
 public:
@@ -115,29 +115,45 @@ public:
         std::mt19937& rng) const override;
     
     std::string getName() const override {
-        return "Location Replacement (N₅)";
+        return "LocationReplacement";
+    }
+};
+
+/**
+ * @class AttractionRemovalNeighborhood
+ * @brief Neighborhood that removes a random attraction from the solution
+ */
+class AttractionRemovalNeighborhood : public Neighborhood {
+public:
+    MOVNSSolution generateRandomNeighbor(
+        const MOVNSSolution& solution,
+        const std::vector<Attraction>& all_attractions,
+        std::mt19937& rng) const override;
+    
+    std::string getName() const override {
+        return "AttractionRemoval";
     }
 };
 
 /**
  * @class NeighborhoodFactory
- * @brief Fábrica para criar instâncias de estruturas de vizinhança
+ * @brief Factory class for creating and managing neighborhoods
  */
 class NeighborhoodFactory {
 public:
     /**
-     * @brief Cria todas as estruturas de vizinhança
+     * @brief Create all available neighborhood operators
      * 
-     * @return std::vector<std::shared_ptr<Neighborhood>> Vetor de estruturas de vizinhança
+     * @return std::vector<std::shared_ptr<Neighborhood>> List of neighborhood operators
      */
     static std::vector<std::shared_ptr<Neighborhood>> createAllNeighborhoods();
     
     /**
-     * @brief Seleciona uma estrutura de vizinhança aleatoriamente
+     * @brief Select a random neighborhood from the available ones
      * 
-     * @param neighborhoods Lista de estruturas de vizinhança disponíveis
-     * @param rng Gerador de números aleatórios
-     * @return std::shared_ptr<Neighborhood> Estrutura de vizinhança selecionada
+     * @param neighborhoods List of available neighborhoods
+     * @param rng Random number generator
+     * @return std::shared_ptr<Neighborhood> Selected neighborhood
      */
     static std::shared_ptr<Neighborhood> selectRandomNeighborhood(
         const std::vector<std::shared_ptr<Neighborhood>>& neighborhoods,

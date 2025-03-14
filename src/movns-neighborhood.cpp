@@ -1,7 +1,9 @@
-// File: movns-neighborhood.cpp
+// File: src/movns-neighborhood.cpp
 
 #include "movns-neighborhood.hpp"
 #include "movns-utils.hpp"
+#include <vector>
+#include <memory>
 #include <algorithm>
 #include <random>
 #include <stdexcept>
@@ -17,6 +19,13 @@ MOVNSSolution TransportModeChangeNeighborhood::generateRandomNeighbor(
     
     // Se a solução tem menos de 2 atrações, não há arcos para mudar o modo
     if (solution.getNumAttractions() < 2) {
+        return solution;
+    }
+    
+    // Using all_attractions reference to avoid unused parameter warning
+    if (all_attractions.empty()) {
+        // This is a safety check that won't be triggered in normal operation
+        // but satisfies the compiler warning
         return solution;
     }
     
@@ -74,6 +83,12 @@ MOVNSSolution LocationReallocationNeighborhood::generateRandomNeighbor(
     
     // Se a solução tem menos de 2 atrações, não há realocação possível
     if (solution.getNumAttractions() < 2) {
+        return solution;
+    }
+    
+    // Using all_attractions reference to avoid unused parameter warning
+    if (all_attractions.empty()) {
+        // This is a safety check that won't be triggered in normal operation
         return solution;
     }
     
@@ -136,6 +151,20 @@ MOVNSSolution LocationExchangeNeighborhood::generateRandomNeighbor(
         return solution;
     }
     
+    // Using all_attractions reference to avoid unused parameter warning
+    if (all_attractions.empty()) {
+        // This is a safety check that won't be triggered in normal operation
+        return solution;
+    }
+    
+    // CORREÇÃO: Se a solução tem exatamente 2 atrações, a troca resultaria na mesma sequência
+    // Neste caso, tente adicionar uma nova atração em vez de trocar
+    if (solution.getNumAttractions() == 2) {
+        // Tente usar o operador de substituição ou adição (LocationReplacementNeighborhood)
+        auto replacement_neighborhood = LocationReplacementNeighborhood();
+        return replacement_neighborhood.generateRandomNeighbor(solution, all_attractions, rng);
+    }
+    
     // Copiar a solução original
     MOVNSSolution new_solution = solution;
     
@@ -144,10 +173,20 @@ MOVNSSolution LocationExchangeNeighborhood::generateRandomNeighbor(
     size_t idx1 = idx1_dist(rng);
     
     size_t idx2;
+    int max_attempts = 10; // Prevenir loops infinitos
+    int attempt = 0;
+    
     do {
         std::uniform_int_distribution<size_t> idx2_dist(0, new_solution.getNumAttractions() - 1);
         idx2 = idx2_dist(rng);
-    } while (idx2 == idx1 || std::abs(static_cast<int>(idx2) - static_cast<int>(idx1)) == 1);
+        attempt++;
+        
+        // Se não conseguirmos encontrar um índice diferente após várias tentativas,
+        // retornamos a solução original para evitar loop infinito
+        if (attempt >= max_attempts) {
+            return solution;
+        }
+    } while (idx2 == idx1);
     
     // Realizar a troca
     new_solution.swapAttractions(idx1, idx2);
@@ -169,6 +208,18 @@ MOVNSSolution SubsequenceInversionNeighborhood::generateRandomNeighbor(
     
     // Se a solução tem menos de 3 atrações, não há subsequência para inverter
     if (solution.getNumAttractions() < 3) {
+        // Para soluções com menos de 3 atrações, tente usar outro operador
+        if (solution.getNumAttractions() == 2) {
+            // Para soluções com 2 atrações, tente adicionar ou substituir
+            auto replacement_neighborhood = LocationReplacementNeighborhood();
+            return replacement_neighborhood.generateRandomNeighbor(solution, all_attractions, rng);
+        }
+        return solution;
+    }
+    
+    // Using all_attractions reference to avoid unused parameter warning
+    if (all_attractions.empty()) {
+        // This is a safety check that won't be triggered in normal operation
         return solution;
     }
     
@@ -231,44 +282,213 @@ MOVNSSolution LocationReplacementNeighborhood::generateRandomNeighbor(
     const std::vector<Attraction>& all_attractions,
     std::mt19937& rng) const {
     
-    // Copiar a solução original
-    MOVNSSolution new_solution = solution;
-    const auto& attractions = solution.getAttractions();
+    // Caso especial para solução com apenas uma atração - força adicionar uma nova
+    if (solution.getNumAttractions() == 1) {
+        // Obter atrações não presentes na solução atual
+        std::vector<const Attraction*> available_attractions;
+        for (const auto& attraction : all_attractions) {
+            bool already_included = false;
+            for (const auto* included_attr : solution.getAttractions()) {
+                if (included_attr->getName() == attraction.getName()) {
+                    already_included = true;
+                    break;
+                }
+            }
+            if (!already_included) {
+                available_attractions.push_back(&attraction);
+            }
+        }
+        
+        // Se não há atrações disponíveis, retornar a original
+        if (available_attractions.empty()) {
+            return solution;
+        }
+        
+        // Tentar até 3 atrações aleatórias diferentes
+        for (int attempt = 0; attempt < 3; ++attempt) {
+            // Selecionar aleatoriamente uma atração
+            std::uniform_int_distribution<size_t> attr_dist(0, available_attractions.size() - 1);
+            size_t attr_idx = attr_dist(rng);
+            const Attraction* new_attraction = available_attractions[attr_idx];
+            
+            // Criar uma nova solução com a atração original e a nova
+            MOVNSSolution new_solution;
+            
+            // Adicionar a atração original
+            for (const auto* att : solution.getAttractions()) {
+                new_solution.addAttraction(*att);
+            }
+            
+            // Adicionar a nova atração
+            new_solution.addAttraction(*new_attraction);
+            
+            // Verificar se a solução é válida
+            if (new_solution.isValid()) {
+                return new_solution;
+            }
+            
+            // Remover essa atração das disponíveis para tentar outra
+            if (attr_idx < available_attractions.size()) {
+                available_attractions.erase(available_attractions.begin() + attr_idx);
+            }
+            
+            if (available_attractions.empty()) {
+                break;
+            }
+        }
+    }
     
-    // Selecionar aleatoriamente uma atração para substituir
-    std::uniform_int_distribution<size_t> idx_dist(0, attractions.size() - 1);
-    size_t idx = idx_dist(rng);
+    // Para soluções com 2+ atrações ou se a adição falhou, proceder normalmente
+    // Randomly decide whether to add (if possible) or replace an attraction
+    std::uniform_real_distribution<double> decision_dist(0.0, 1.0);
+    bool try_addition = decision_dist(rng) < 0.7 && solution.getNumAttractions() < 10;
     
-    // Selecionar uma atração disponível para substituição
-    const Attraction* new_attraction = Utils::selectRandomAvailableAttraction(
-        all_attractions, solution, rng);
+    if (try_addition) {
+        // Get attractions not in the current solution
+        std::vector<const Attraction*> available_attractions;
+        for (const auto& attraction : all_attractions) {
+            bool already_included = false;
+            for (const auto* included_attr : solution.getAttractions()) {
+                if (included_attr->getName() == attraction.getName()) {
+                    already_included = true;
+                    break;
+                }
+            }
+            if (!already_included) {
+                available_attractions.push_back(&attraction);
+            }
+        }
+        
+        // If no attractions are available, return the original solution
+        if (available_attractions.empty()) {
+            return solution;
+        }
+        
+        // Select a random available attraction
+        std::uniform_int_distribution<size_t> attr_dist(0, available_attractions.size() - 1);
+        const Attraction* new_attraction = available_attractions[attr_dist(rng)];
+        
+        // Try adding at the end first (simplest case)
+        MOVNSSolution new_solution = solution;
+        new_solution.addAttraction(*new_attraction);
+        
+        if (new_solution.isValid()) {
+            return new_solution;
+        }
+        
+        // If adding at the end fails, try different insertion positions
+        for (int pos = 0; pos <= solution.getNumAttractions(); ++pos) {
+            MOVNSSolution test_solution = solution;
+            try {
+                test_solution.insertAttraction(*new_attraction, pos);
+                if (test_solution.isValid()) {
+                    return test_solution;
+                }
+            } catch (const std::exception&) {
+                // If insertion fails, try next position
+                continue;
+            }
+        }
+    }
     
-    // Se não há atrações disponíveis, retornar a solução original
-    if (new_attraction == nullptr) {
+    // If addition not possible or not chosen and solution has at least 2 attractions, try replacement
+    if (solution.getNumAttractions() >= 2) {
+        const auto& attractions = solution.getAttractions();
+        
+        // Randomly select an attraction to replace
+        std::uniform_int_distribution<size_t> idx_dist(0, attractions.size() - 1);
+        size_t idx = idx_dist(rng);
+        
+        // Get attractions not in the current solution
+        std::vector<const Attraction*> available_attractions;
+        for (const auto& attraction : all_attractions) {
+            bool already_included = false;
+            for (const auto* included_attr : solution.getAttractions()) {
+                if (included_attr->getName() == attraction.getName()) {
+                    already_included = true;
+                    break;
+                }
+            }
+            if (!already_included) {
+                available_attractions.push_back(&attraction);
+            }
+        }
+        
+        // If no attractions are available, return the original solution
+        if (available_attractions.empty()) {
+            return solution;
+        }
+        
+        // Select a random available attraction
+        std::uniform_int_distribution<size_t> attr_dist(0, available_attractions.size() - 1);
+        const Attraction* new_attraction = available_attractions[attr_dist(rng)];
+        
+        // Create new sequence with the replacement
+        std::vector<const Attraction*> new_sequence = attractions;
+        new_sequence[idx] = new_attraction;
+        
+        // Create new solution with the modified sequence
+        MOVNSSolution new_solution;
+        
+        // Add the first attraction
+        new_solution.addAttraction(*new_sequence[0]);
+        
+        // Add the remaining attractions with transport modes determined automatically
+        for (size_t i = 1; i < new_sequence.size(); ++i) {
+            new_solution.addAttraction(*new_sequence[i]);
+        }
+        
+        // Check if the solution is valid
+        if (new_solution.isValid()) {
+            return new_solution;
+        }
+    }
+    
+    // If all attempts fail, return the original solution
+    return solution;
+}
+
+// AttractionRemovalNeighborhood
+MOVNSSolution AttractionRemovalNeighborhood::generateRandomNeighbor(
+    const MOVNSSolution& solution,
+    const std::vector<Attraction>& all_attractions,
+    std::mt19937& rng) const {
+    
+    // If solution has only 1 attraction, can't remove
+    if (solution.getNumAttractions() <= 1) {
+        // Try using a different neighborhood operator that adds attractions
+        if (solution.getNumAttractions() == 1) {
+            // For solutions with 1 attraction, try adding a new one
+            auto replacement_neighborhood = LocationReplacementNeighborhood();
+            return replacement_neighborhood.generateRandomNeighbor(solution, all_attractions, rng);
+        }
         return solution;
     }
     
-    // Criar nova sequência com a substituição
-    std::vector<const Attraction*> new_sequence = attractions;
-    new_sequence[idx] = new_attraction;
-    
-    // Criar nova solução com a sequência modificada
-    new_solution = MOVNSSolution();
-    
-    // Adicionar a primeira atração
-    new_solution.addAttraction(*new_sequence[0]);
-    
-    // Adicionar as demais atrações com modos de transporte determinados automaticamente
-    for (size_t i = 1; i < new_sequence.size(); ++i) {
-        new_solution.addAttraction(*new_sequence[i]);
+    // Using all_attractions reference to avoid unused parameter warning
+    if (all_attractions.empty()) {
+        return solution;
     }
     
-    // Verificar se a solução é válida
+    // If the solution has exactly 2 attractions and we remove one, we'd have 1 attraction
+    // This is still valid, so we can proceed
+    
+    // Select a random attraction to remove (avoid removing the first one if possible)
+    std::uniform_int_distribution<size_t> dist(
+        solution.getNumAttractions() > 2 ? 1 : 0, 
+        solution.getNumAttractions() - 1);
+    size_t idx = dist(rng);
+    
+    // Create a copy of the solution and remove the selected attraction
+    MOVNSSolution new_solution = solution;
+    new_solution.removeAttraction(idx);
+    
+    // If solution is valid, return it
     if (new_solution.isValid()) {
         return new_solution;
     }
     
-    // Se não for válida, retornar a original
+    // If not valid, return original
     return solution;
 }
 
@@ -281,6 +501,7 @@ std::vector<std::shared_ptr<Neighborhood>> NeighborhoodFactory::createAllNeighbo
     neighborhoods.push_back(std::make_shared<LocationExchangeNeighborhood>());
     neighborhoods.push_back(std::make_shared<SubsequenceInversionNeighborhood>());
     neighborhoods.push_back(std::make_shared<LocationReplacementNeighborhood>());
+    neighborhoods.push_back(std::make_shared<AttractionRemovalNeighborhood>());
     
     return neighborhoods;
 }

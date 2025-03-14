@@ -1,4 +1,4 @@
-// File: movns-solution.cpp
+// File: src/movns-solution.cpp
 
 #include "movns-solution.hpp"
 #include "utils.hpp"
@@ -7,6 +7,7 @@
 #include <sstream>
 #include <unordered_set>
 #include <iomanip>
+#include <cmath>
 
 namespace tourist {
 
@@ -45,13 +46,32 @@ const std::vector<utils::TransportMode>& MOVNSSolution::getTransportModes() cons
 void MOVNSSolution::addAttraction(const Attraction& attraction, utils::TransportMode mode) {
     const Attraction* attr_ptr = &attraction;
     
+    // Check if attraction is already in the solution
+    auto it = std::find_if(attractions_.begin(), attractions_.end(),
+                          [attr_ptr](const Attraction* existing) {
+                              return existing->getName() == attr_ptr->getName();
+                          });
+    
+    // If attraction already exists, don't add it again
+    if (it != attractions_.end()) {
+        return;
+    }
+    
     if (!attractions_.empty()) {
         const Attraction* prev_attr = attractions_.back();
         
         // Se o modo não foi especificado, determina o modo preferencial
-        if (mode == utils::TransportMode::CAR) {
+        if (mode == utils::TransportMode::CAR) { // Changed from UNDEFINED to CAR
             mode = utils::Transport::determinePreferredMode(
                 prev_attr->getName(), attr_ptr->getName());
+            
+            // For long distances, force car use
+            double travel_time = utils::Transport::getTravelTime(
+                prev_attr->getName(), attr_ptr->getName(), utils::TransportMode::WALK);
+                
+            if (travel_time > utils::Config::WALK_TIME_PREFERENCE) {
+                mode = utils::TransportMode::CAR;
+            }
         }
         
         transport_modes_.push_back(mode);
@@ -123,12 +143,23 @@ void MOVNSSolution::swapAttractions(size_t index1, size_t index2) {
     recalculateTimeInfo();
 }
 
-void MOVNSSolution::insertAttraction(const Attraction& attraction, size_t position, utils::TransportMode mode) {
+void MOVNSSolution::insertAttraction(const Attraction& attraction, size_t position, utils::TransportMode /* mode */) {
     if (position > attractions_.size()) {
         throw std::out_of_range("Position out of range");
     }
     
     const Attraction* attr_ptr = &attraction;
+    
+    // Check if attraction is already in the solution
+    auto it = std::find_if(attractions_.begin(), attractions_.end(),
+                          [attr_ptr](const Attraction* existing) {
+                              return existing->getName() == attr_ptr->getName();
+                          });
+    
+    // If attraction already exists, don't add it again
+    if (it != attractions_.end()) {
+        return;
+    }
     
     // Insere a atração na posição especificada
     attractions_.insert(attractions_.begin() + position, attr_ptr);
@@ -139,18 +170,53 @@ void MOVNSSolution::insertAttraction(const Attraction& attraction, size_t positi
             // Inserção no início
             utils::TransportMode newMode = utils::Transport::determinePreferredMode(
                 attr_ptr->getName(), attractions_[1]->getName());
+                
+            // For long distances, force car use
+            double travel_time = utils::Transport::getTravelTime(
+                attr_ptr->getName(), attractions_[1]->getName(), utils::TransportMode::WALK);
+                
+            if (travel_time > utils::Config::WALK_TIME_PREFERENCE) {
+                newMode = utils::TransportMode::CAR;
+            }
+                
             transport_modes_.insert(transport_modes_.begin(), newMode);
         } else if (position == attractions_.size() - 1) {
             // Inserção no final
             utils::TransportMode newMode = utils::Transport::determinePreferredMode(
                 attractions_[position-1]->getName(), attr_ptr->getName());
+                
+            // For long distances, force car use
+            double travel_time = utils::Transport::getTravelTime(
+                attractions_[position-1]->getName(), attr_ptr->getName(), utils::TransportMode::WALK);
+                
+            if (travel_time > utils::Config::WALK_TIME_PREFERENCE) {
+                newMode = utils::TransportMode::CAR;
+            }
+                
             transport_modes_.push_back(newMode);
         } else {
             // Inserção no meio
             utils::TransportMode beforeMode = utils::Transport::determinePreferredMode(
                 attractions_[position-1]->getName(), attr_ptr->getName());
+                
+            // For long distances, force car use
+            double travel_time_before = utils::Transport::getTravelTime(
+                attractions_[position-1]->getName(), attr_ptr->getName(), utils::TransportMode::WALK);
+                
+            if (travel_time_before > utils::Config::WALK_TIME_PREFERENCE) {
+                beforeMode = utils::TransportMode::CAR;
+            }
+                
             utils::TransportMode afterMode = utils::Transport::determinePreferredMode(
                 attr_ptr->getName(), attractions_[position+1]->getName());
+                
+            // For long distances, force car use
+            double travel_time_after = utils::Transport::getTravelTime(
+                attr_ptr->getName(), attractions_[position+1]->getName(), utils::TransportMode::WALK);
+                
+            if (travel_time_after > utils::Config::WALK_TIME_PREFERENCE) {
+                afterMode = utils::TransportMode::CAR;
+            }
                 
             // Atualiza o modo anterior
             if (position - 1 < transport_modes_.size()) {
@@ -171,16 +237,21 @@ double MOVNSSolution::getTotalCost() const {
     
     // Custo das atrações
     for (const auto* attraction : attractions_) {
-        total += attraction->getCost();
+        double attraction_cost = attraction->getCost();
+        // Ensure the cost is at least 0 - protect against negative costs
+        total += std::max(0.0, attraction_cost);
     }
     
     // Custo de transporte
     for (size_t i = 0; i < attractions_.size() - 1 && i < transport_modes_.size(); ++i) {
-        total += utils::Transport::getTravelCost(
+        double travel_cost = utils::Transport::getTravelCost(
             attractions_[i]->getName(),
             attractions_[i+1]->getName(),
             transport_modes_[i]
         );
+        
+        // Ensure travel cost is at least 0 - protect against negative costs
+        total += std::max(0.0, travel_cost);
     }
     
     return total;
@@ -242,8 +313,11 @@ std::vector<double> MOVNSSolution::getObjectives() const {
         neighborhoods.insert(attraction->getNeighborhood());
     }
     
+    // Get the cost, ensuring it's at least 0
+    double cost = std::max(0.0, getTotalCost());
+    
     return {
-        getTotalCost(),                      // Minimizar custo total
+        cost,                                 // Minimizar custo total
         total_time + time_penalty,           // Minimizar tempo total (com penalidade)
         -static_cast<double>(getNumAttractions()),  // Maximizar número de atrações
         -static_cast<double>(neighborhoods.size())  // Maximizar número de bairros
@@ -251,14 +325,30 @@ std::vector<double> MOVNSSolution::getObjectives() const {
 }
 
 bool MOVNSSolution::isValid() const {
-    return checkTimeConstraints() && respectsTimeLimit() && respectsWalkingLimit();
+    // If empty, not valid
+    if (attractions_.empty()) {
+        return false;
+    }
+    
+    // Check for duplicate attractions
+    std::unordered_set<std::string> seen_attractions;
+    for (const auto* attraction : attractions_) {
+        if (!seen_attractions.insert(attraction->getName()).second) {
+            return false; // Found a duplicate
+        }
+    }
+    
+    // Include the time limit check to prevent constraint violations
+    return checkTimeConstraints() && respectsWalkingLimit() && respectsTimeLimit();
 }
 
 bool MOVNSSolution::respectsTimeLimit() const {
+    // Daily time limit constraint (840 minutes)
     return getTotalTime() <= utils::Config::DAILY_TIME_LIMIT;
 }
 
 bool MOVNSSolution::respectsWalkingLimit() const {
+    // Walking time constraint (15 minutes maximum)
     for (size_t i = 0; i < attractions_.size() - 1 && i < transport_modes_.size(); ++i) {
         if (transport_modes_[i] == utils::TransportMode::WALK) {
             double travel_time = utils::Transport::getTravelTime(
@@ -275,74 +365,31 @@ bool MOVNSSolution::respectsWalkingLimit() const {
     return true;
 }
 
-void MOVNSSolution::recalculateTimeInfo() {
-    if (attractions_.empty()) return;
-    
-    // Hora de início do dia (9:00 = 540 minutos desde meia-noite)
-    double current_time = 9 * 60;
-    
-    // Processa a primeira atração
-    auto& first_time_info = time_info_[0];
-    
-    // Verifica se a atração está aberta na hora atual
-    if (!attractions_[0]->isOpenAt(current_time)) {
-        if (current_time < attractions_[0]->getOpeningTime()) {
-            // Atração ainda não abriu, espera até a abertura
-            double wait_time = attractions_[0]->getOpeningTime() - current_time;
-            first_time_info.wait_time = wait_time;
-            current_time = attractions_[0]->getOpeningTime();
-        }
-    }
-    
-    first_time_info.arrival_time = current_time;
-    current_time += attractions_[0]->getVisitTime();
-    first_time_info.departure_time = current_time;
-    
-    // Processa as atrações subsequentes
-    for (size_t i = 1; i < attractions_.size(); ++i) {
-        auto& time_info = time_info_[i];
-        
-        // Calcula o tempo de deslocamento
-        double travel_time = utils::Transport::getTravelTime(
-            attractions_[i-1]->getName(),
-            attractions_[i]->getName(),
-            transport_modes_[i-1]
-        );
-        
-        current_time += travel_time;
-        
-        // Verifica se a atração está aberta na hora de chegada
-        if (!attractions_[i]->isOpenAt(current_time)) {
-            if (current_time < attractions_[i]->getOpeningTime()) {
-                // Atração ainda não abriu, espera até a abertura
-                double wait_time = attractions_[i]->getOpeningTime() - current_time;
-                time_info.wait_time = wait_time;
-                current_time = attractions_[i]->getOpeningTime();
-            }
-        }
-        
-        time_info.arrival_time = current_time;
-        current_time += attractions_[i]->getVisitTime();
-        time_info.departure_time = current_time;
-    }
-}
-
 bool MOVNSSolution::checkTimeConstraints() const {
     if (attractions_.empty()) return true;
     
-    // Verifica se todas as atrações estão abertas nos horários calculados
+    // Relax the constraint check to allow more solutions during exploration
+    // We'll only enforce attraction visit times and opening hours
+    
+    // Verify attraction opening/closing times
     for (size_t i = 0; i < attractions_.size(); ++i) {
         if (i < time_info_.size()) {
             double arrival_time = time_info_[i].arrival_time;
             double departure_time = time_info_[i].departure_time;
             
-            // Verifica se a atração está aberta na chegada
+            // Check if attraction is open at arrival time
             if (!attractions_[i]->isOpenAt(static_cast<int>(arrival_time))) {
                 return false;
             }
             
-            // Verifica se a atração ainda está aberta na saída
+            // Check if attraction is still open at departure time
             if (!attractions_[i]->isOpenAt(static_cast<int>(departure_time))) {
+                return false;
+            }
+            
+            // Check if visit duration is respected
+            double visit_duration = departure_time - arrival_time - time_info_[i].wait_time;
+            if (std::abs(visit_duration - attractions_[i]->getVisitTime()) > 1.0) { // Allow small tolerance
                 return false;
             }
         }
@@ -371,10 +418,28 @@ bool MOVNSSolution::dominates(const MOVNSSolution& other) const {
 }
 
 bool MOVNSSolution::operator==(const MOVNSSolution& other) const {
-    return attractions_.size() == other.attractions_.size() &&
-           std::equal(attractions_.begin(), attractions_.end(), other.attractions_.begin(),
-                    [](const Attraction* a, const Attraction* b) { return *a == *b; }) &&
-           transport_modes_ == other.transport_modes_;
+    // Alterar a comparação para verificar se as sequências são idênticas (incluindo a ordem)
+    // em vez de apenas verificar se as mesmas atrações estão presentes
+    
+    if (attractions_.size() != other.attractions_.size()) {
+        return false;
+    }
+    
+    // Comparar cada atração na mesma posição
+    for (size_t i = 0; i < attractions_.size(); ++i) {
+        if (attractions_[i]->getName() != other.attractions_[i]->getName()) {
+            return false;
+        }
+    }
+    
+    // Comparar cada modo de transporte na mesma posição
+    for (size_t i = 0; i < transport_modes_.size() && i < other.transport_modes_.size(); ++i) {
+        if (transport_modes_[i] != other.transport_modes_[i]) {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 std::string MOVNSSolution::toString() const {
@@ -429,6 +494,62 @@ std::string MOVNSSolution::toString() const {
     }
     
     return ss.str();
+}
+
+void MOVNSSolution::recalculateTimeInfo() {
+    if (attractions_.empty()) return;
+    
+    // Hora de início do dia (9:00 = 540 minutos desde meia-noite)
+    double current_time = 9 * 60;
+    
+    // Processa a primeira atração
+    auto& first_time_info = time_info_[0];
+    first_time_info.wait_time = 0.0;  // Reset wait time
+    
+    // Verifica se a atração está aberta na hora atual
+    if (!attractions_[0]->isOpenAt(current_time)) {
+        if (current_time < attractions_[0]->getOpeningTime()) {
+            // Atração ainda não abriu, espera até a abertura
+            double wait_time = attractions_[0]->getOpeningTime() - current_time;
+            first_time_info.wait_time = wait_time;
+            current_time = attractions_[0]->getOpeningTime();
+        }
+        // Se já fechou, manteremos a informação para validação posterior
+    }
+    
+    first_time_info.arrival_time = current_time;
+    current_time += attractions_[0]->getVisitTime();
+    first_time_info.departure_time = current_time;
+    
+    // Processa as atrações subsequentes
+    for (size_t i = 1; i < attractions_.size(); ++i) {
+        auto& time_info = time_info_[i];
+        time_info.wait_time = 0.0;  // Reset wait time
+        
+        // Calcula o tempo de deslocamento
+        double travel_time = utils::Transport::getTravelTime(
+            attractions_[i-1]->getName(),
+            attractions_[i]->getName(),
+            transport_modes_[i-1]
+        );
+        
+        current_time += travel_time;
+        
+        // Verifica se a atração está aberta na hora de chegada
+        if (!attractions_[i]->isOpenAt(current_time)) {
+            if (current_time < attractions_[i]->getOpeningTime()) {
+                // Atração ainda não abriu, espera até a abertura
+                double wait_time = attractions_[i]->getOpeningTime() - current_time;
+                time_info.wait_time = wait_time;
+                current_time = attractions_[i]->getOpeningTime();
+            }
+            // Se já fechou, manteremos a informação para validação posterior
+        }
+        
+        time_info.arrival_time = current_time;
+        current_time += attractions_[i]->getVisitTime();
+        time_info.departure_time = current_time;
+    }
 }
 
 } // namespace tourist

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # run-movns.sh - Script para executar o algoritmo MOVNS e salvar resultados no diretório adequado
 
 # Cores para saída
@@ -41,20 +40,18 @@ echo -e "${BLUE}Executando MOVNS...${NC}"
 cd build
 ./bin/movns_main
 
-# Copiar os resultados para a pasta results na raiz
-echo -e "${BLUE}Copiando resultados para o diretório results...${NC}"
-if [ -f "resultados_movns.csv" ]; then
-    cp resultados_movns.csv ../results/movns-resultados.csv
-    echo -e "${GREEN}Arquivo movns-resultados.csv salvo em results/${NC}"
+# Verificar se os arquivos já estão no diretório results
+echo -e "${BLUE}Verificando resultados...${NC}"
+if [ -f "../results/movns-resultados.csv" ]; then
+    echo -e "${GREEN}Arquivo movns-resultados.csv encontrado em results/${NC}"
 else
-    echo -e "${RED}Arquivo resultados_movns.csv não encontrado!${NC}"
+    echo -e "${RED}Arquivo movns-resultados.csv não encontrado em results/${NC}"
 fi
 
-if [ -f "movns-geracoes.csv" ]; then
-    cp movns-geracoes.csv ../results/movns-geracoes.csv
-    echo -e "${GREEN}Arquivo movns-geracoes.csv salvo em results/${NC}"
+if [ -f "../results/movns-geracoes.csv" ]; then
+    echo -e "${GREEN}Arquivo movns-geracoes.csv encontrado em results/${NC}"
 else
-    echo -e "${RED}Arquivo movns-geracoes.csv não encontrado!${NC}"
+    echo -e "${RED}Arquivo movns-geracoes.csv não encontrado em results/${NC}"
 fi
 
 cd ..

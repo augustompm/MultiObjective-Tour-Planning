@@ -1,4 +1,4 @@
-// File: movns-utils.hpp
+// File: include/movns-utils.hpp
 
 #pragma once
 
@@ -13,38 +13,38 @@ namespace movns {
 
 /**
  * @class Utils
- * @brief Funções utilitárias para o algoritmo MOVNS
+ * @brief Utility functions for the MOVNS algorithm
  */
 class Utils {
 public:
     /**
-     * @brief Gera uma solução inicial aleatória
+     * @brief Generates a random initial solution
      * 
-     * @param attractions Conjunto de atrações disponíveis
-     * @param max_attractions Número máximo de atrações a incluir
-     * @return MOVNSSolution Solução inicial gerada
+     * @param attractions Set of available attractions
+     * @param max_attractions Maximum number of attractions to include
+     * @return MOVNSSolution Generated initial solution
      */
     static MOVNSSolution generateRandomSolution(
         const std::vector<Attraction>& attractions,
         size_t max_attractions = 8);
     
     /**
-     * @brief Verifica se uma solução é válida (respeita todas as restrições)
+     * @brief Checks if a solution is valid (respects all constraints)
      * 
-     * @param solution Solução a ser verificada
-     * @return true Se a solução é válida
-     * @return false Caso contrário
+     * @param solution Solution to check
+     * @return true If the solution is valid
+     * @return false Otherwise
      */
     static bool isValidSolution(const MOVNSSolution& solution);
     
     /**
-     * @brief Verifica se um modo de transporte é viável entre duas atrações
+     * @brief Checks if a transport mode is viable between two attractions
      * 
-     * @param from Atração de origem
-     * @param to Atração de destino
-     * @param mode Modo de transporte a verificar
-     * @return true Se o modo é viável
-     * @return false Caso contrário
+     * @param from Origin attraction
+     * @param to Destination attraction
+     * @param mode Transport mode to check
+     * @return true If the mode is viable
+     * @return false Otherwise
      */
     static bool isViableTransportMode(
         const Attraction& from,
@@ -52,23 +52,23 @@ public:
         utils::TransportMode mode);
     
     /**
-     * @brief Encontra atração pelo nome
+     * @brief Finds an attraction by name
      * 
-     * @param attractions Lista de atrações
-     * @param name Nome da atração a procurar
-     * @return const Attraction* Ponteiro para a atração encontrada ou nullptr
+     * @param attractions List of attractions
+     * @param name Name of the attraction to find
+     * @return const Attraction* Pointer to the found attraction or nullptr
      */
     static const Attraction* findAttractionByName(
         const std::vector<Attraction>& attractions,
         const std::string& name);
     
     /**
-     * @brief Seleciona uma atração aleatória não incluída na solução atual
+     * @brief Selects a random available attraction not included in the current solution
      * 
-     * @param all_attractions Todas as atrações disponíveis
-     * @param current_solution Solução atual
-     * @param rng Gerador de números aleatórios
-     * @return const Attraction* Atração selecionada ou nullptr se nenhuma disponível
+     * @param all_attractions All available attractions
+     * @param current_solution Current solution
+     * @param rng Random number generator
+     * @return const Attraction* Selected attraction or nullptr if none available
      */
     static const Attraction* selectRandomAvailableAttraction(
         const std::vector<Attraction>& all_attractions,
@@ -77,4 +77,4 @@ public:
 };
 
 } // namespace movns
-} // namespace tourist
+} // namespace touristc

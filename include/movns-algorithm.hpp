@@ -1,6 +1,5 @@
-// File: movns-algorithm.hpp
-
-#pragma once
+#ifndef MOVNS_ALGORITHM_HPP
+#define MOVNS_ALGORITHM_HPP
 
 #include "movns-solution.hpp"
 #include "movns-neighborhood.hpp"
@@ -17,60 +16,66 @@ namespace movns {
 
 /**
  * @class MOVNS
- * @brief Implementação do algoritmo Multi-Objective Variable Neighborhood Search
+ * @brief Implementation of Multi-Objective Variable Neighborhood Search algorithm
  */
 class MOVNS {
 public:
     /**
-     * @brief Estrutura de configuração para o algoritmo MOVNS
+     * @brief Configuration structure for MOVNS algorithm
      */
     struct Parameters {
-        size_t max_iterations = 1000;         // Número máximo de iterações
-        size_t max_time_seconds = 300;        // Tempo máximo de execução em segundos
-        size_t max_iterations_no_improvement = 100; // Máximo de iterações sem melhoria
+        // Constructor with default values
+        Parameters() : max_iterations(1000), max_time_seconds(300), max_iterations_no_improvement(100) {}
         
-        // Validação dos parâmetros
+        size_t max_iterations;         // Maximum number of iterations
+        size_t max_time_seconds;       // Maximum execution time in seconds
+        size_t max_iterations_no_improvement; // Maximum iterations without improvement
+        
+        // Parameter validation
         void validate() const;
     };
     
     /**
-     * @brief Construtor do MOVNS
+     * @brief MOVNS constructor
      * 
-     * @param attractions Lista de atrações disponíveis
-     * @param params Parâmetros de configuração
+     * @param attractions List of available attractions
+     * @param params Configuration parameters
      */
     MOVNS(const std::vector<Attraction>& attractions, Parameters params = Parameters());
     
     /**
-     * @brief Executa o algoritmo MOVNS
+     * @brief Run the MOVNS algorithm
      * 
-     * @return std::vector<MOVNSSolution> Conjunto de soluções não-dominadas
+     * @return std::vector<MOVNSSolution> Set of non-dominated solutions
      */
     std::vector<MOVNSSolution> run();
     
 private:
-    // Tipo para facilitar referência ao conjunto de aproximação
+    // Type alias for the approximation set
     using ApproximationSet = std::vector<MOVNSSolution>;
     
-    // Estado de exploração das vizinhanças para cada solução
+    // Exploration state for each solution
     struct SolutionExplorationState {
         std::set<std::string> explored_neighborhoods;
         bool fully_explored = false;
     };
     
-    // Dados do problema
+    // Problem data
     const std::vector<Attraction>& attractions_;
     const Parameters params_;
     
-    // Estado da busca
+    // Search state
     ApproximationSet p_approx_;
     std::vector<std::shared_ptr<Neighborhood>> neighborhoods_;
     std::unordered_map<size_t, SolutionExplorationState> exploration_state_;
     
-    // Gerador de números aleatórios
+    // Iteration history - updated to include neighborhood count
+    std::vector<std::tuple<size_t, size_t, double, double, int, int>> iteration_history_;
+    
+    // Random number generator
     mutable std::mt19937 rng_{std::random_device{}()};
     
-    // Métodos auxiliares
+    // Helper methods
     void initializeApproximationSet();
     bool updateApproximationSet(const MOVNSSolution& solution);
     MOVNSSolution selectSolutionForExploration();
@@ -79,9 +84,11 @@ private:
     std::vector<MOVNSSolution> sortSolutions(const ApproximationSet& solutions) const;
     void logProgress(size_t iteration, size_t iterations_no_improvement) const;
     
-    // Busca local
+    // Local search
     MOVNSSolution localSearch(MOVNSSolution solution);
 };
 
 } // namespace movns
 } // namespace tourist
+
+#endif // MOVNS_ALGORITHM_HPP

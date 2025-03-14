@@ -1,4 +1,4 @@
-// File: movns-metrics.cpp
+// File: src/movns-metrics.cpp
 
 #include "movns-metrics.hpp"
 #include "models.hpp"
@@ -96,67 +96,46 @@ std::vector<Solution> Metrics::convertToNSGA2Format(
     return nsga_solutions;
 }
 
-/**
- * @brief Elimina soluções duplicadas e inválidas do conjunto de aproximação
- * 
- * Baseado no conceito de exploração eficiente do espaço de soluções
- * (Mladenović e Hansen, 1997)
- * 
- * @param solutions Conjunto de soluções
- * @return std::vector<MOVNSSolution> Conjunto de soluções sem duplicatas
- */
 std::vector<MOVNSSolution> Metrics::filterDuplicatesAndInvalid(
     const std::vector<MOVNSSolution>& solutions) {
     
-    // Rastrear combinações únicas de atrações
-    std::set<std::string> unique_attraction_sequences;
+    // Rastrear sequências únicas de atrações
     std::vector<MOVNSSolution> filtered;
+    std::map<std::string, bool> seen_solutions;
     
     for (const auto& solution : solutions) {
-        // Verificar se a solução é válida (não tem atrações repetidas)
+        // Skip invalid solutions
+        if (!solution.isValid()) {
+            continue;
+        }
+        
+        // Create a simplified hash of the solution based on attractions
+        std::string solution_hash;
         const auto& attractions = solution.getAttractions();
-        std::unordered_set<std::string> attraction_set;
-        bool has_duplicates = false;
         
-        for (const auto* attraction : attractions) {
-            if (attraction_set.find(attraction->getName()) != attraction_set.end()) {
-                has_duplicates = true;
-                break;
-            }
-            attraction_set.insert(attraction->getName());
+        // Sort attraction names for unique identification regardless of order
+        std::vector<std::string> attraction_names;
+        for (const auto* attr : attractions) {
+            attraction_names.push_back(attr->getName());
+        }
+        std::sort(attraction_names.begin(), attraction_names.end());
+        
+        for (const auto& name : attraction_names) {
+            solution_hash += name + "|";
         }
         
-        if (has_duplicates) {
-            continue; // Pular soluções com atrações repetidas
-        }
-        
-        // Construir uma string representando a sequência de atrações
-        std::string attraction_sequence;
-        for (const auto* attraction : attractions) {
-            attraction_sequence += attraction->getName() + "|";
-        }
-        
-        // Verificar se esta sequência já foi vista
-        if (unique_attraction_sequences.find(attraction_sequence) == unique_attraction_sequences.end()) {
-            unique_attraction_sequences.insert(attraction_sequence);
+        // Only add if this hash is new
+        if (seen_solutions.find(solution_hash) == seen_solutions.end()) {
+            seen_solutions[solution_hash] = true;
             filtered.push_back(solution);
         }
     }
     
-    std::cout << "Filtered out " << (solutions.size() - filtered.size()) << " duplicate or invalid solutions." << std::endl;
+    std::cout << "Filtered out " << (solutions.size() - filtered.size()) 
+              << " duplicate or invalid solutions." << std::endl;
     return filtered;
 }
 
-/**
- * @brief Aplica ε-dominância para reduzir o tamanho da fronteira Pareto
- * 
- * Baseado no trabalho de Zitzler et al. (2003) "Performance Assessment of Multiobjective Optimizers: 
- * An Analysis and Review"
- * 
- * @param solutions Conjunto de soluções
- * @param epsilon Parâmetro de granularidade para cada objetivo
- * @return std::vector<MOVNSSolution> Conjunto reduzido de soluções
- */
 std::vector<MOVNSSolution> Metrics::applyEpsilonDominance(
     const std::vector<MOVNSSolution>& solutions,
     const std::vector<double>& epsilon) {
@@ -165,78 +144,81 @@ std::vector<MOVNSSolution> Metrics::applyEpsilonDominance(
         return solutions;
     }
     
-    // Mapeamento de células para soluções
-    std::map<std::vector<int>, MOVNSSolution> grid_cells;
+    // For this application, we'll use a more relaxed epsilon-dominance
+    // to preserve diversity in the Pareto front
     
-    // Para cada solução
-    for (const auto& solution : solutions) {
-        // Calcular coordenadas da célula para esta solução
-        std::vector<int> cell_coords;
-        const auto& objectives = solution.getObjectives();
+    std::vector<MOVNSSolution> non_dominated = solutions;
+    std::vector<bool> dominated(solutions.size(), false);
+    
+    // For each pair of solutions
+    for (size_t i = 0; i < solutions.size(); ++i) {
+        if (dominated[i]) continue; // Skip if already dominated
         
-        // Garantir que epsilon tenha o tamanho correto
-        std::vector<double> eps = epsilon;
-        if (eps.size() < objectives.size()) {
-            eps.resize(objectives.size(), 0.01); // Valor padrão se não especificado
-        }
+        const auto& obj_i = solutions[i].getObjectives();
         
-        // Mapear a solução para uma célula da grade
-        for (size_t i = 0; i < objectives.size(); ++i) {
-            int cell_coord = static_cast<int>(objectives[i] / eps[i]);
-            cell_coords.push_back(cell_coord);
-        }
-        
-        // Verificar se a célula já tem uma solução
-        auto it = grid_cells.find(cell_coords);
-        if (it == grid_cells.end()) {
-            // Nova célula, adicionar esta solução
-            grid_cells[cell_coords] = solution;
-        } else {
-            // Célula já tem uma solução, manter a melhor
-            // Para objetivos de minimização (0, 1), menor é melhor
-            // Para objetivos de maximização (2, 3), maior é melhor (mas estão negativos no vetor)
-            bool better = false;
-            bool worse = false;
+        for (size_t j = i + 1; j < solutions.size(); ++j) {
+            if (dominated[j]) continue; // Skip if already dominated
             
-            for (size_t i = 0; i < objectives.size(); ++i) {
-                if (objectives[i] < it->second.getObjectives()[i]) {
-                    better = true;
-                } else if (objectives[i] > it->second.getObjectives()[i]) {
-                    worse = true;
+            const auto& obj_j = solutions[j].getObjectives();
+            
+            // Special handling for tourist routing objectives
+            // Consider solutions equivalent only if they have same number of
+            // attractions and neighborhoods, then apply epsilon to cost and time
+            
+            // First check if attractions and neighborhoods are the same
+            bool same_structure = (
+                std::abs(obj_i[2] - obj_j[2]) < 0.5 &&  // -attractions
+                std::abs(obj_i[3] - obj_j[3]) < 0.5     // -neighborhoods
+            );
+            
+            // Only consider dominance if structure is similar
+            if (same_structure) {
+                // Check if i ε-dominates j for cost and time
+                bool i_dominates_j = true;
+                bool j_dominates_i = true;
+                
+                // Compare cost and time with epsilon
+                for (size_t k = 0; k < 2; ++k) {
+                    double eps = k < epsilon.size() ? epsilon[k] : 5.0;
+                    
+                    // i doesn't dominate j for objective k
+                    if (obj_i[k] > obj_j[k] + eps) {
+                        i_dominates_j = false;
+                    }
+                    
+                    // j doesn't dominate i for objective k
+                    if (obj_j[k] > obj_i[k] + eps) {
+                        j_dominates_i = false;
+                    }
+                }
+                
+                // Mark dominated solution
+                if (i_dominates_j) {
+                    dominated[j] = true;
+                } else if (j_dominates_i) {
+                    dominated[i] = true;
+                    break; // i is dominated, can stop comparing it
                 }
             }
-            
-            // Se a solução atual é melhor em pelo menos um objetivo e não pior em nenhum
-            if (better && !worse) {
-                grid_cells[cell_coords] = solution;
-            }
-            // Em caso de indefinição, preferir soluções com mais atrações (objetivo 2, negado)
-            else if (!better && !worse && objectives[2] < it->second.getObjectives()[2]) {
-                grid_cells[cell_coords] = solution;
-            }
         }
     }
     
-    // Extrair as soluções das células
-    std::vector<MOVNSSolution> reduced_solutions;
-    for (const auto& cell : grid_cells) {
-        reduced_solutions.push_back(cell.second);
+    // Build non-dominated set
+    std::vector<MOVNSSolution> result;
+    for (size_t i = 0; i < solutions.size(); ++i) {
+        if (!dominated[i]) {
+            result.push_back(solutions[i]);
+        }
     }
     
-    std::cout << "Reduced solution set from " << solutions.size() << " to " << reduced_solutions.size() 
+    std::cout << "Reduced solution set from " << solutions.size() << " to " << result.size() 
               << " using ε-dominance." << std::endl;
     
-    return reduced_solutions;
+    return result;
 }
 
-/**
- * @brief Exporta o histórico de gerações para um arquivo CSV
- * 
- * @param iteration_history Histórico de iterações
- * @param filename Nome do arquivo
- */
 void Metrics::exportGenerationHistory(
-    const std::vector<std::tuple<size_t, size_t, double, double, int>>& iteration_history,
+    const std::vector<std::tuple<size_t, size_t, double, double, int, int>>& iteration_history,
     const std::string& filename) {
     
     std::ofstream file(filename);
@@ -244,52 +226,81 @@ void Metrics::exportGenerationHistory(
         throw std::runtime_error("Could not open file for writing: " + filename);
     }
     
-    // Escrever cabeçalho
-    file << "Generation;Front size;Best Cost;Best Time;Max Attractions\n";
+    // Write header with neighborhoods column
+    file << "Generation;Front size;Best Cost;Best Time;Max Attractions;Max Neighborhoods\n";
     
-    // Escrever dados de cada geração
-    for (const auto& [generation, front_size, best_cost, best_time, max_attractions] : iteration_history) {
-        file << generation << ";"
-             << front_size << ";"
-             << std::fixed << std::setprecision(2) << best_cost << ";"
-             << std::fixed << std::setprecision(2) << best_time << ";"
-             << max_attractions << "\n";
+    // Write data for each generation
+    for (const auto& history_entry : iteration_history) {
+        file << std::get<0>(history_entry) << ";" 
+             << std::get<1>(history_entry) << ";" 
+             << std::fixed << std::setprecision(2) << std::get<2>(history_entry) << ";" 
+             << std::fixed << std::setprecision(2) << std::get<3>(history_entry) << ";"
+             << std::get<4>(history_entry) << ";"
+             << std::get<5>(history_entry) << "\n";
     }
     
     file.close();
 }
 
-// Replace the existing exportToCSV function with this new version
 void Metrics::exportToCSV(
     const std::vector<MOVNSSolution>& solutions,
     const std::string& filename,
-    const std::vector<std::tuple<size_t, size_t, double, double, int>>& iteration_history) {
+    const std::vector<std::tuple<size_t, size_t, double, double, int, int>>& iteration_history) {
     
-    // Aplicar filtragens para melhorar a qualidade das soluções
+    // Apply filtering to improve solution quality but preserve diversity
     std::vector<MOVNSSolution> filtered = filterDuplicatesAndInvalid(solutions);
     
-    // Definir valores de epsilon para cada objetivo
-    // [custo, tempo, -atrações, -bairros]
-    std::vector<double> epsilon = {5.0, 15.0, 0.5, 0.5};
+    // Define epsilon values for each objective
+    // Using relaxed values to maintain diversity
+    // [cost, time, -attractions, -neighborhoods]
+    std::vector<double> epsilon = {10.0, 30.0, 0.1, 0.1};
     std::vector<MOVNSSolution> reduced = applyEpsilonDominance(filtered, epsilon);
     
-    // Exportar soluções filtradas
+    // Sort solutions for presentation
+    std::sort(reduced.begin(), reduced.end(), 
+             [](const MOVNSSolution& a, const MOVNSSolution& b) {
+                 // First by number of neighborhoods (descending)
+                 if (a.getNumNeighborhoods() != b.getNumNeighborhoods()) {
+                     return a.getNumNeighborhoods() > b.getNumNeighborhoods();
+                 }
+                 
+                 // Then by number of attractions (descending)
+                 if (a.getNumAttractions() != b.getNumAttractions()) {
+                     return a.getNumAttractions() > b.getNumAttractions();
+                 }
+                 
+                 // Then by total cost (ascending)
+                 if (std::abs(a.getTotalCost() - b.getTotalCost()) > 1e-6) {
+                     return a.getTotalCost() < b.getTotalCost();
+                 }
+                 
+                 // Finally by total time (ascending)
+                 return a.getTotalTime() < b.getTotalTime();
+             });
+    
+    // Limit to a maximum of 50 solutions if we have more
+    const size_t max_solutions = 50;
+    if (reduced.size() > max_solutions) {
+        reduced.resize(max_solutions);
+    }
+    
+    // Export valid solutions
     std::ofstream file("../results/" + filename);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file for writing: " + filename);
     }
     
-    // Escrever cabeçalho
+    // Write header
     file << "Solucao;CustoTotal;TempoTotal;NumAtracoes;NumBairros;HoraInicio;HoraFim;Bairros;Sequencia;TemposChegada;TemposPartida;ModosTransporte\n";
     
-    // Escrever cada solução
+    // Write each solution
     for (size_t i = 0; i < reduced.size(); ++i) {
         file << (i + 1) << ";" << reduced[i].toString() << "\n";
     }
     
     file.close();
     
-    // Exportar histórico de gerações
+    // Export generation history
     std::string gen_filename = "../results/movns-geracoes.csv";
     exportGenerationHistory(iteration_history, gen_filename);
 }
