@@ -1,0 +1,1 @@
+/usr/bin/c++ "CMakeFiles/movns_main.dir/src/movns-main.cpp.o" -o bin/movns_main  libmovns_lib.a libtourist_lib.a 

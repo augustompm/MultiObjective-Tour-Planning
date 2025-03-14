@@ -127,5 +127,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/tourist_lib.dir/DependInfo.cmake"
+  "CMakeFiles/movns_lib.dir/DependInfo.cmake"
   "CMakeFiles/tourist_route.dir/DependInfo.cmake"
+  "CMakeFiles/movns_main.dir/DependInfo.cmake"
   )

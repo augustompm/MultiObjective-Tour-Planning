@@ -130,6 +130,19 @@ tourist_lib/fast:
 .PHONY : tourist_lib/fast
 
 #=============================================================================
+# Target rules for targets named movns_lib
+
+# Build rule for target.
+movns_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 movns_lib
+.PHONY : movns_lib
+
+# fast build rule for target.
+movns_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/build
+.PHONY : movns_lib/fast
+
+#=============================================================================
 # Target rules for targets named tourist_route
 
 # Build rule for target.
@@ -141,6 +154,19 @@ tourist_route: cmake_check_build_system
 tourist_route/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_route.dir/build.make CMakeFiles/tourist_route.dir/build
 .PHONY : tourist_route/fast
+
+#=============================================================================
+# Target rules for targets named movns_main
+
+# Build rule for target.
+movns_main: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 movns_main
+.PHONY : movns_main
+
+# fast build rule for target.
+movns_main/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_main.dir/build.make CMakeFiles/movns_main.dir/build
+.PHONY : movns_main/fast
 
 src/hypervolume.o: src/hypervolume.cpp.o
 .PHONY : src/hypervolume.o
@@ -214,6 +240,150 @@ src/models.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/tourist_lib.dir/build.make CMakeFiles/tourist_lib.dir/src/models.cpp.s
 .PHONY : src/models.cpp.s
 
+src/movns-algorithm.o: src/movns-algorithm.cpp.o
+.PHONY : src/movns-algorithm.o
+
+# target to build an object file
+src/movns-algorithm.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-algorithm.cpp.o
+.PHONY : src/movns-algorithm.cpp.o
+
+src/movns-algorithm.i: src/movns-algorithm.cpp.i
+.PHONY : src/movns-algorithm.i
+
+# target to preprocess a source file
+src/movns-algorithm.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-algorithm.cpp.i
+.PHONY : src/movns-algorithm.cpp.i
+
+src/movns-algorithm.s: src/movns-algorithm.cpp.s
+.PHONY : src/movns-algorithm.s
+
+# target to generate assembly for a file
+src/movns-algorithm.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-algorithm.cpp.s
+.PHONY : src/movns-algorithm.cpp.s
+
+src/movns-main.o: src/movns-main.cpp.o
+.PHONY : src/movns-main.o
+
+# target to build an object file
+src/movns-main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_main.dir/build.make CMakeFiles/movns_main.dir/src/movns-main.cpp.o
+.PHONY : src/movns-main.cpp.o
+
+src/movns-main.i: src/movns-main.cpp.i
+.PHONY : src/movns-main.i
+
+# target to preprocess a source file
+src/movns-main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_main.dir/build.make CMakeFiles/movns_main.dir/src/movns-main.cpp.i
+.PHONY : src/movns-main.cpp.i
+
+src/movns-main.s: src/movns-main.cpp.s
+.PHONY : src/movns-main.s
+
+# target to generate assembly for a file
+src/movns-main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_main.dir/build.make CMakeFiles/movns_main.dir/src/movns-main.cpp.s
+.PHONY : src/movns-main.cpp.s
+
+src/movns-metrics.o: src/movns-metrics.cpp.o
+.PHONY : src/movns-metrics.o
+
+# target to build an object file
+src/movns-metrics.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-metrics.cpp.o
+.PHONY : src/movns-metrics.cpp.o
+
+src/movns-metrics.i: src/movns-metrics.cpp.i
+.PHONY : src/movns-metrics.i
+
+# target to preprocess a source file
+src/movns-metrics.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-metrics.cpp.i
+.PHONY : src/movns-metrics.cpp.i
+
+src/movns-metrics.s: src/movns-metrics.cpp.s
+.PHONY : src/movns-metrics.s
+
+# target to generate assembly for a file
+src/movns-metrics.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-metrics.cpp.s
+.PHONY : src/movns-metrics.cpp.s
+
+src/movns-neighborhood.o: src/movns-neighborhood.cpp.o
+.PHONY : src/movns-neighborhood.o
+
+# target to build an object file
+src/movns-neighborhood.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-neighborhood.cpp.o
+.PHONY : src/movns-neighborhood.cpp.o
+
+src/movns-neighborhood.i: src/movns-neighborhood.cpp.i
+.PHONY : src/movns-neighborhood.i
+
+# target to preprocess a source file
+src/movns-neighborhood.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-neighborhood.cpp.i
+.PHONY : src/movns-neighborhood.cpp.i
+
+src/movns-neighborhood.s: src/movns-neighborhood.cpp.s
+.PHONY : src/movns-neighborhood.s
+
+# target to generate assembly for a file
+src/movns-neighborhood.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-neighborhood.cpp.s
+.PHONY : src/movns-neighborhood.cpp.s
+
+src/movns-solution.o: src/movns-solution.cpp.o
+.PHONY : src/movns-solution.o
+
+# target to build an object file
+src/movns-solution.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-solution.cpp.o
+.PHONY : src/movns-solution.cpp.o
+
+src/movns-solution.i: src/movns-solution.cpp.i
+.PHONY : src/movns-solution.i
+
+# target to preprocess a source file
+src/movns-solution.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-solution.cpp.i
+.PHONY : src/movns-solution.cpp.i
+
+src/movns-solution.s: src/movns-solution.cpp.s
+.PHONY : src/movns-solution.s
+
+# target to generate assembly for a file
+src/movns-solution.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-solution.cpp.s
+.PHONY : src/movns-solution.cpp.s
+
+src/movns-utils.o: src/movns-utils.cpp.o
+.PHONY : src/movns-utils.o
+
+# target to build an object file
+src/movns-utils.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-utils.cpp.o
+.PHONY : src/movns-utils.cpp.o
+
+src/movns-utils.i: src/movns-utils.cpp.i
+.PHONY : src/movns-utils.i
+
+# target to preprocess a source file
+src/movns-utils.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-utils.cpp.i
+.PHONY : src/movns-utils.cpp.i
+
+src/movns-utils.s: src/movns-utils.cpp.s
+.PHONY : src/movns-utils.s
+
+# target to generate assembly for a file
+src/movns-utils.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/movns_lib.dir/build.make CMakeFiles/movns_lib.dir/src/movns-utils.cpp.s
+.PHONY : src/movns-utils.cpp.s
+
 src/nsga2-base.o: src/nsga2-base.cpp.o
 .PHONY : src/nsga2-base.o
 
@@ -270,6 +440,8 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... movns_lib"
+	@echo "... movns_main"
 	@echo "... tourist_lib"
 	@echo "... tourist_route"
 	@echo "... src/hypervolume.o"
@@ -281,6 +453,24 @@ help:
 	@echo "... src/models.o"
 	@echo "... src/models.i"
 	@echo "... src/models.s"
+	@echo "... src/movns-algorithm.o"
+	@echo "... src/movns-algorithm.i"
+	@echo "... src/movns-algorithm.s"
+	@echo "... src/movns-main.o"
+	@echo "... src/movns-main.i"
+	@echo "... src/movns-main.s"
+	@echo "... src/movns-metrics.o"
+	@echo "... src/movns-metrics.i"
+	@echo "... src/movns-metrics.s"
+	@echo "... src/movns-neighborhood.o"
+	@echo "... src/movns-neighborhood.i"
+	@echo "... src/movns-neighborhood.s"
+	@echo "... src/movns-solution.o"
+	@echo "... src/movns-solution.i"
+	@echo "... src/movns-solution.s"
+	@echo "... src/movns-utils.o"
+	@echo "... src/movns-utils.i"
+	@echo "... src/movns-utils.s"
 	@echo "... src/nsga2-base.o"
 	@echo "... src/nsga2-base.i"
 	@echo "... src/nsga2-base.s"

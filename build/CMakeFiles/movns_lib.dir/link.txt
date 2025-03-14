@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmovns_lib.a "CMakeFiles/movns_lib.dir/src/movns-solution.cpp.o" "CMakeFiles/movns_lib.dir/src/movns-utils.cpp.o" "CMakeFiles/movns_lib.dir/src/movns-neighborhood.cpp.o" "CMakeFiles/movns_lib.dir/src/movns-algorithm.cpp.o" "CMakeFiles/movns_lib.dir/src/movns-metrics.cpp.o"
+/usr/bin/ranlib libmovns_lib.a

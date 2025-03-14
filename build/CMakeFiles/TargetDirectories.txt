@@ -1,4 +1,6 @@
 /home/augusto/projects/MultiObjective-Tour-Planning/build/CMakeFiles/tourist_lib.dir
+/home/augusto/projects/MultiObjective-Tour-Planning/build/CMakeFiles/movns_lib.dir
 /home/augusto/projects/MultiObjective-Tour-Planning/build/CMakeFiles/tourist_route.dir
+/home/augusto/projects/MultiObjective-Tour-Planning/build/CMakeFiles/movns_main.dir
 /home/augusto/projects/MultiObjective-Tour-Planning/build/CMakeFiles/edit_cache.dir
 /home/augusto/projects/MultiObjective-Tour-Planning/build/CMakeFiles/rebuild_cache.dir
