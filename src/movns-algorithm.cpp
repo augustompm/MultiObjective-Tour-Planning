@@ -43,29 +43,19 @@ std::vector<MOVNSSolution> MOVNS::run() {
     // Inicialização
     initializeApproximationSet();
     
-    // Debug: Log the state after initialization
-    std::cout << "After initialization, approximation set size: " << p_approx_.size() << std::endl;
-    
     // Configuração para medir o tempo de execução
     const auto start_time = std::chrono::high_resolution_clock::now();
     size_t iteration = 0;
     size_t iterations_no_improvement = 0;
     
-    // Debug: Mark the entry into the main loop
-    std::cout << "Entering main loop..." << std::endl;
-    
     // Loop principal
     while (iteration < params_.max_iterations && 
            iterations_no_improvement < params_.max_iterations_no_improvement) {
-        
-        // Debug: Log the current iteration
-        std::cout << "Starting iteration " << iteration + 1 << std::endl;
         
         // Verificar tempo máximo
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
         if (static_cast<size_t>(elapsed) >= params_.max_time_seconds) {
-            std::cout << "Time limit reached after " << iteration << " iterations." << std::endl;
             break;
         }
 
@@ -74,28 +64,17 @@ std::vector<MOVNSSolution> MOVNS::run() {
         bool iteration_timeout = false;
         
         try {
-            // Debug: Check approximation set state
-            std::cout << "Current approximation set size: " << p_approx_.size() << std::endl;
-            
             // Verificar se o conjunto de aproximação está vazio
             if (p_approx_.empty()) {
-                std::cout << "Approximation set is empty. Reinitializing..." << std::endl;
                 initializeApproximationSet();
                 continue;
             }
             
-            // Debug: About to select solution
-            std::cout << "Selecting solution for exploration..." << std::endl;
-            
             // Selecionar uma solução para exploração
             MOVNSSolution x = selectSolutionForExploration();
             
-            // Debug: Selected solution
-            std::cout << "Selected solution with " << x.getNumAttractions() << " attractions" << std::endl;
-            
             // Verificar se a solução é válida
             if (!x.isValid()) {
-                std::cout << "Selected an invalid solution. Removing from set." << std::endl;
                 auto it = std::find(p_approx_.begin(), p_approx_.end(), x);
                 if (it != p_approx_.end()) {
                     size_t index = std::distance(p_approx_.begin(), it);
@@ -105,27 +84,17 @@ std::vector<MOVNSSolution> MOVNS::run() {
                 continue;
             }
             
-            // Debug: About to select neighborhood
-            std::cout << "Selecting neighborhood operator..." << std::endl;
-            
             // Selecionar vizinhança aleatoriamente
             auto neighborhood = NeighborhoodFactory::selectRandomNeighborhood(neighborhoods_, rng_);
-            
-            // Debug: Selected neighborhood
-            std::cout << "Selected neighborhood: " << neighborhood->getName() << std::endl;
             
             // Verificar timeout após cada operação potencialmente custosa
             current_time = std::chrono::high_resolution_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(current_time - iteration_start).count() > 5) {
-                std::cout << "Iteration timeout after neighborhood selection." << std::endl;
                 iteration_timeout = true;
                 iteration++;
                 iterations_no_improvement++;
                 continue;
             }
-            
-            // Debug: About to generate neighbor
-            std::cout << "Generating random neighbor..." << std::endl;
             
             // Gerar solução vizinha - PORÉM LIMITANDO NÚMERO DE TENTATIVAS PARA EVITAR LOOPS INFINITOS
             const int MAX_NEIGHBOR_ATTEMPTS = 10;
@@ -144,7 +113,6 @@ std::vector<MOVNSSolution> MOVNS::run() {
                 // Verificar se atingimos o timeout durante as tentativas
                 current_time = std::chrono::high_resolution_clock::now();
                 if (std::chrono::duration_cast<std::chrono::seconds>(current_time - iteration_start).count() > 5) {
-                    std::cout << "Timeout while attempting to generate valid neighbor." << std::endl;
                     iteration_timeout = true;
                     break;
                 }
@@ -157,19 +125,14 @@ std::vector<MOVNSSolution> MOVNS::run() {
             }
             
             if (!generated_valid_neighbor) {
-                std::cout << "Failed to generate a valid neighbor after " << MAX_NEIGHBOR_ATTEMPTS << " attempts. Marking neighborhood as explored." << std::endl;
                 markNeighborhoodAsExplored(x, *neighborhood);
                 iteration++;
                 iterations_no_improvement++;
                 continue;
             }
             
-            // Debug: Generated neighbor
-            std::cout << "Generated neighbor with " << x_prime.getNumAttractions() << " attractions" << std::endl;
-            
             current_time = std::chrono::high_resolution_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(current_time - iteration_start).count() > 5) {
-                std::cout << "Iteration timeout after neighbor generation." << std::endl;
                 iteration_timeout = true;
                 iteration++;
                 iterations_no_improvement++;
@@ -178,9 +141,6 @@ std::vector<MOVNSSolution> MOVNS::run() {
             
             // Verificar se a solução vizinha é igual à original
             if (x == x_prime) {
-                // Debug: No change in solution
-                std::cout << "Neighbor is identical to original solution, marking as explored" << std::endl;
-                
                 // Se são iguais, marcar a vizinhança como explorada e continuar
                 markNeighborhoodAsExplored(x, *neighborhood);
                 iteration++;
@@ -188,32 +148,19 @@ std::vector<MOVNSSolution> MOVNS::run() {
                 continue;
             }
             
-            // Debug: About to perform local search
-            std::cout << "Performing local search..." << std::endl;
-            
             // Aplicar busca local para melhorar a solução vizinha
             MOVNSSolution x_double_prime = localSearch(x_prime);
             
-            // Debug: Completed local search
-            std::cout << "Local search resulted in solution with " << x_double_prime.getNumAttractions() << " attractions" << std::endl;
-            
             current_time = std::chrono::high_resolution_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(current_time - iteration_start).count() > 5) {
-                std::cout << "Iteration timeout after local search." << std::endl;
                 iteration_timeout = true;
                 iteration++;
                 iterations_no_improvement++;
                 continue;
             }
             
-            // Debug: About to update approximation set
-            std::cout << "Updating approximation set..." << std::endl;
-            
             // Atualizar o conjunto de aproximação
             bool improved = updateApproximationSet(x_double_prime);
-            
-            // Debug: Updated approximation set
-            std::cout << "Approximation set updated, improvement: " << (improved ? "yes" : "no") << std::endl;
             
             // Marcar a vizinhança como explorada para esta solução
             markNeighborhoodAsExplored(x, *neighborhood);
@@ -225,9 +172,6 @@ std::vector<MOVNSSolution> MOVNS::run() {
             } else {
                 iterations_no_improvement = 0;
             }
-            
-            // Debug: Completed iteration
-            std::cout << "Completed iteration " << iteration << std::endl;
             
             // Log de progresso (a cada 100 iterações)
             if (iteration % 100 == 0) {
@@ -254,19 +198,16 @@ std::vector<MOVNSSolution> MOVNS::run() {
             }
         }
         catch (const std::exception& e) {
-            std::cout << "Exception in iteration " << iteration << ": " << e.what() << std::endl;
             iteration_timeout = true;
         }
         
         if (iteration_timeout) {
-            std::cout << "Skipping to next iteration due to timeout." << std::endl;
             iteration++;
             iterations_no_improvement++;
         }
         
         // Verificar se o conjunto de aproximação está vazio após iteração
         if (p_approx_.empty()) {
-            std::cout << "Approximation set became empty. Reinitializing..." << std::endl;
             initializeApproximationSet();
             continue;
         }
@@ -283,7 +224,6 @@ std::vector<MOVNSSolution> MOVNS::run() {
         // Se todas as soluções estão exploradas, reiniciar o estado de exploração
         if (all_explored) {
             exploration_state_.clear();
-            std::cout << "All solutions fully explored. Resetting exploration state." << std::endl;
         }
     }
     
@@ -310,9 +250,6 @@ void MOVNS::initializeApproximationSet() {
     
     // Adicionar ao conjunto de aproximação
     p_approx_.push_back(initial_solution);
-    
-    std::cout << "Initial solution generated with " << initial_solution.getNumAttractions()
-              << " attractions from " << initial_solution.getNumNeighborhoods() << " neighborhoods." << std::endl;
 }
 
 bool MOVNS::updateApproximationSet(const MOVNSSolution& solution) {
@@ -407,7 +344,6 @@ MOVNSSolution MOVNS::selectSolutionForExploration() {
     
     // Se todas as soluções estão totalmente exploradas, resetar o estado de exploração
     if (candidate_indices.empty()) {
-        std::cout << "All solutions fully explored. Resetting exploration state." << std::endl;
         exploration_state_.clear();
         
         // Agora todas as soluções são candidatas
@@ -499,31 +435,10 @@ std::vector<MOVNSSolution> MOVNS::sortSolutions(const ApproximationSet& solution
 }
 
 void MOVNS::logProgress(size_t iteration, size_t iterations_no_improvement) const {
-    if (!p_approx_.empty()) {
+    if (!p_approx_.empty() && iteration % 100 == 0) {
         std::cout << "Iteration " << iteration 
-                  << ": Approximation set size = " << p_approx_.size()
-                  << ", Iterations without improvement = " << iterations_no_improvement << std::endl;
-        
-        // Find best solution values
-        double best_cost = std::numeric_limits<double>::max();
-        double best_time = std::numeric_limits<double>::max();
-        int max_attractions = 0;
-        int max_neighborhoods = 0;  // Track neighborhoods
-        
-        for (const auto& solution : p_approx_) {
-            if (solution.isValid()) {
-                best_cost = std::min(best_cost, solution.getTotalCost());
-                best_time = std::min(best_time, solution.getTotalTime());
-                max_attractions = std::max(max_attractions, solution.getNumAttractions());
-                max_neighborhoods = std::max(max_neighborhoods, solution.getNumNeighborhoods());
-            }
-        }
-        
-        // Display current best values
-        std::cout << "Best values: [Cost=" << std::fixed << std::setprecision(2) << best_cost 
-                  << ", Time=" << std::fixed << std::setprecision(1) << best_time 
-                  << ", Attractions=" << max_attractions
-                  << ", Neighborhoods=" << max_neighborhoods << "]" << std::endl;
+                  << ": Set size = " << p_approx_.size()
+                  << ", No improvement = " << iterations_no_improvement << std::endl;
     }
 }
 

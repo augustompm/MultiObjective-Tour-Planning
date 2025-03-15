@@ -19,10 +19,10 @@ Interpretation:
 Algorithm Results:
 -----------------
 Summary Table:
-Algorithm A | Algorithm B | C(A,B) | Interpretation
------------|------------|---------|---------------
-NSGA-II     | MOVNS      | 0.1800 | NSGA-II weakly dominates some solutions of MOVNS
-MOVNS       | NSGA-II    | 0.3243 | MOVNS slightly dominates NSGA-II
+Algorithm A | Algorithm B | C(A,B) | 
+----------- |------------|---------|
+NSGA-II     | MOVNS      | 0.1800  | 
+MOVNS       | NSGA-II    | 0.3243  | 
 
 
 Detailed Results:

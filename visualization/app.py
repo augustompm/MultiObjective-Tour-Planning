@@ -24,27 +24,57 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 
 # File paths
-RESULTS_FILE = "../build/resultados_nsga2_base.csv"
-GENERATIONS_FILE = "../build/geracoes_nsga2_base.csv"
+RESULTS_FILE = "../results/nsga2-resultados.csv"  # Alterar para o local correto
+GENERATIONS_FILE = "../results/nsga2-geracoes.csv"  # Alterar para o local correto
+
+# Function to look for files in multiple locations
+def find_file(primary_path, alternate_names=None):
+    if os.path.exists(primary_path):
+        return primary_path
+        
+    # Check alternate names in the same directory
+    if alternate_names:
+        primary_dir = os.path.dirname(primary_path)
+        primary_name = os.path.basename(primary_path)
+        
+        for alt_name in alternate_names:
+            alt_path = os.path.join(primary_dir, alt_name)
+            if os.path.exists(alt_path):
+                logger.info(f"Found alternate file: {alt_path}")
+                return alt_path
+    
+    # Check in other common directories
+    common_dirs = ["../results/", "results/", "../", "./"]
+    filename = os.path.basename(primary_path)
+    
+    for directory in common_dirs:
+        path = os.path.join(directory, filename)
+        if os.path.exists(path):
+            logger.info(f"Found file in alternate location: {path}")
+            return path
+            
+        # Also check alternate names in these directories
+        if alternate_names:
+            for alt_name in alternate_names:
+                alt_path = os.path.join(directory, alt_name)
+                if os.path.exists(alt_path):
+                    logger.info(f"Found alternate file in alternate location: {alt_path}")
+                    return alt_path
+    
+    return None
 
 # Load data
 def load_data():
     try:
-        logger.info(f"Tentando carregar o arquivo de resultados: {RESULTS_FILE}")
-        if not os.path.exists(RESULTS_FILE):
-            logger.error(f"Arquivo não encontrado: {RESULTS_FILE}")
-            logger.info("Procurando arquivo resultados_nsga2_base.csv no diretório atual...")
-            
-            current_dir_file = "resultados_nsga2_base.csv"
-            if os.path.exists(current_dir_file):
-                logger.info(f"Usando arquivo do diretório atual: {current_dir_file}")
-                results_df = pd.read_csv(current_dir_file, sep=';', encoding='utf-8')
-            else:
-                logger.error("Arquivo de resultados não encontrado!")
-                return pd.DataFrame(), pd.DataFrame()
-        else:
-            # Results data
-            results_df = pd.read_csv(RESULTS_FILE, sep=';', encoding='utf-8')
+        # Find results file
+        results_path = find_file(RESULTS_FILE, ["resultados_nsga2_base.csv", "movns-resultados.csv"])
+        if not results_path:
+            logger.error("Arquivo de resultados não encontrado em nenhum local!")
+            return pd.DataFrame(), pd.DataFrame()
+
+        # Results data
+        logger.info(f"Carregando arquivo de resultados: {results_path}")
+        results_df = pd.read_csv(results_path, sep=';', encoding='utf-8')
         
         logger.info(f"Arquivo de resultados carregado com sucesso. Linhas: {len(results_df)}")
         
@@ -71,23 +101,16 @@ def load_data():
         
         # Generations data
         try:
-            logger.info(f"Tentando carregar o arquivo de gerações: {GENERATIONS_FILE}")
-            if not os.path.exists(GENERATIONS_FILE):
-                logger.error(f"Arquivo não encontrado: {GENERATIONS_FILE}")
-                logger.info("Procurando arquivo geracoes_nsga2_base.csv no diretório atual...")
-                
-                current_dir_file = "geracoes_nsga2_base.csv"
-                if os.path.exists(current_dir_file):
-                    logger.info(f"Usando arquivo do diretório atual: {current_dir_file}")
-                    generations_df = pd.read_csv(current_dir_file, sep=';', encoding='utf-8')
-                else:
-                    logger.warning("Arquivo de gerações não encontrado!")
-                    generations_df = pd.DataFrame(columns=['Generation', 'Front size', 'Best Cost', 'Best Time', 'Max Attractions'])
+            # Find generations file
+            generations_path = find_file(GENERATIONS_FILE, ["geracoes_nsga2_base.csv", "movns-geracoes.csv"])
+            if not generations_path:
+                logger.warning("Arquivo de gerações não encontrado!")
+                generations_df = pd.DataFrame(columns=['Generation', 'Front size', 'Best Cost', 'Best Time', 'Max Attractions'])
             else:
-                generations_df = pd.read_csv(GENERATIONS_FILE, sep=';', encoding='utf-8')
-            
-            logger.info(f"Arquivo de gerações carregado com sucesso. Linhas: {len(generations_df)}")
-            logger.info(f"Colunas do arquivo de gerações: {generations_df.columns.tolist()}")
+                logger.info(f"Carregando arquivo de gerações: {generations_path}")
+                generations_df = pd.read_csv(generations_path, sep=';', encoding='utf-8')
+                logger.info(f"Arquivo de gerações carregado com sucesso. Linhas: {len(generations_df)}")
+                logger.info(f"Colunas do arquivo de gerações: {generations_df.columns.tolist()}")
             
         except Exception as e:
             logger.error(f"Erro ao processar o arquivo de gerações: {e}")
