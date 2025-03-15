@@ -64,20 +64,6 @@ Para calcular o hipervolume das soluções geradas:
 cd utils
 python hypervolume.py --input ../results/nsga2-resultados.csv
 ```
-
-## Citação
-
-Se você utilizar este código em sua pesquisa, por favor cite nosso trabalho:
-
-```
-@inproceedings{mendonca2025otimizacao,
-  title={Otimiza{\c{c}}{\~a}o Multiobjetivo para Planejamento de Rotas Tur{\'\i}sticas: Um Dia no Rio de Janeiro},
-  author={Mendon{\c{c}}a, Augusto Magalh{\~a}es Pinto de and Sousa, Filipe Pessoa and Coelho, Igor Machado},
-  booktitle={Proceedings of the CNMAC 2025},
-  year={2025}
-}
-```
-
 ## Licença
 
 Este projeto está licenciado sob a licença MIT.
