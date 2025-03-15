@@ -492,16 +492,16 @@ def update_parallel_coords(selected_solution):
         # Improve layout
         fig.update_layout(
             margin=dict(l=100, r=100, t=80, b=80),
-            height=600,
+            height=400,
             title={
                 'text': "Visualização de Coordenadas Paralelas das Soluções Não-dominadas",
                 'y': 0.95,
                 'x': 0.5,
                 'xanchor': 'center',
                 'yanchor': 'top',
-                'font': dict(size=18)
+                'font': dict(size=16)
             },
-            font=dict(size=14),
+            font=dict(size=12),
             paper_bgcolor='rgba(255,255,255,0.9)',
             plot_bgcolor='rgba(255,255,255,0.9)'
         )
