@@ -1,0 +1,103 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.text-primary {
+    color: #3b5ddb !important;
+}
+
+.solution-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+}
+
+.timeline-card {
+    transition: transform 0.2s ease;
+}
+
+.timeline-card:hover {
+    transform: translateY(-2px);
+}
+
+.border-start {
+    border-left-width: 4px !important;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h4 {
+        font-size: 1.2rem;
+    }
+    
+    h5 {
+        font-size: 1.1rem;
+    }
+}
+
+.objectives-container {
+    min-height: 400px;
+    overflow-x: auto;
+}
+
+.timeline-item {
+    border-left: 3px solid #3b5ddb;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 0.5rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #3b5ddb;
+}
+
+.transport-card {
+    background-color: #f1f3f4;
+    border-left: 3px solid #6c757d;
+}
+
+.slider-container {
+    padding: 1rem;
+}
+
+.rc-slider-handle {
+    background-color: #3b5ddb !important;
+    border-color: #3b5ddb !important;
+}
+
+.rc-slider-track {
+    background-color: #3b5ddb !important;
+}

@@ -5,3 +5,6 @@ OSRM/.key
 # Claude Code memory files
 CLAUDE.md
 .claude/
+
+# Local unit tests (development only)
+app/unit/
