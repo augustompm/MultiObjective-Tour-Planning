@@ -1,3 +1,7 @@
 # Arquivos de chaves de API
 .key
 OSRM/.key
+
+# Claude Code memory files
+CLAUDE.md
+.claude/

@@ -17,7 +17,7 @@ Este repositório contém a implementação de um sistema de otimização multio
 - `/data` - Arquivos de dados das atrações e matrizes de distância/tempo
 - `/visualization` - Aplicativo web "Um Dia no Rio" para visualização e navegação das soluções
 - `/results` - Resultados experimentais e métricas de avaliação
-- `/utils` - Ferramentas auxiliares, incluindo implementação do algoritmo HSO para cálculo de hipervolume
+- `/metrics` - Ferramentas auxiliares, incluindo implementação do algoritmo HSO para cálculo de hipervolume
 
 ## Aplicativo "Um Dia no Rio"
 
@@ -42,27 +42,35 @@ O aplicativo estará disponível em `http://localhost:8050`
 
 ## Requisitos
 
-- Python 3.8+
-- Bibliotecas Python listadas em `requirements.txt`
+- C++17+ (compilador compatível)
+- CMake 3.15+
+- Python 3.8+ (para visualização)
+- Bibliotecas Python listadas em `visualization/requirements.txt`
 
 ## Uso do Algoritmo
 
-Para executar o algoritmo NSGA-II e gerar novas soluções:
+Para compilar e executar o algoritmo NSGA-II:
 
 ```bash
-cd src
-python main.py
+./run.sh
 ```
 
-Os parâmetros de configuração podem ser ajustados no arquivo `config.py`.
+Ou manualmente:
+
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build .
+./bin/tourist_route
+```
 
 ## Avaliação de Hipervolume
 
 Para calcular o hipervolume das soluções geradas:
 
 ```bash
-cd utils
-python hypervolume.py --input ../results/nsga2-resultados.csv
+cd metrics
+python calculate_hypervolume.py
 ```
 
 ## Citação
