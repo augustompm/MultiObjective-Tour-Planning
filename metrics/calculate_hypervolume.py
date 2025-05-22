@@ -702,7 +702,7 @@ def run_test_cases():
     
     # 4D test case
     test_4d_points = [
-        [100, 200, -8, -7],  # Cost, Time, -Attractions, -Neighborhoods
+        [100, 200, -8, -7], 
         [150, 150, -7, -8],
         [200, 100, -9, -6]
     ]
@@ -711,12 +711,11 @@ def run_test_cases():
     volume_4d = calculate_raw_hypervolume_direct(test_4d_points, test_4d_ref)
     debug_print(f"4D Test Case: Got {volume_4d}")
     
-    # Test normalized calculation
+
     norm_volume = calculate_normalized_hypervolume(test_4d_points, test_4d_ref)
     debug_print(f"4D Normalized Test: Got {norm_volume}")
     
-    # Set pass criteria: first test must be at least 14000
-    # (allowing for some rounding errors)
+
     return volume_2d > 14000 and volume_4d > 0 and norm_volume > 0
 
 def main():
@@ -726,7 +725,7 @@ def main():
     script_dir = Path(os.path.dirname(os.path.abspath(__file__)))
     project_root = script_dir.parent
     
-    # Find results directory
+
     results_dir = project_root / "results"
     if not results_dir.exists():
         print(f"Results directory not found: {results_dir}")
@@ -734,24 +733,24 @@ def main():
     
     print(f"Using results directory: {results_dir}")
     
-    # Create a debug log file
+
     debug_log = results_dir / "hypervolume_debug.log"
     if DEBUG:
-        # Redirect stdout to both console and log file
+
         sys.stdout = DebugTee(sys.stdout, open(debug_log, 'w'))
     
-    # Run test cases first
+
     tests_passed = run_test_cases()
     if not tests_passed:
         debug_print("WARNING: Test cases failed. Hypervolume calculation may be incorrect.")
     
-    # Look for files with more flexible patterns
+
     result_files = []
     patterns = ["*-resultados.csv", "*resultados.csv"]
     for pattern in patterns:
         result_files.extend(list(results_dir.glob(pattern)))
     
-    # Remove duplicates
+
     result_files = list(set(result_files))
     
     if not result_files:
@@ -762,19 +761,16 @@ def main():
     for file in result_files:
         print(f" - {file.name}")
     
-    # Define reference point
-    # Following Zitzler et al. (2003), p.121, the reference point should be
-    # "slightly beyond the nadir point"
     reference_point = [
-        NADIR_COST * 1.1,          # Slightly worse than worst cost
-        NADIR_TIME * 1.1,          # Slightly worse than worst time
-        -NADIR_ATTRACTIONS * 0.9,  # Slightly worse than worst attractions (remember negation)
-        -NADIR_NEIGHBORHOODS * 0.9 # Slightly worse than worst neighborhoods (remember negation)
+        NADIR_COST * 1.1,          
+        NADIR_TIME * 1.1,          
+        -NADIR_ATTRACTIONS * 0.9,  
+        -NADIR_NEIGHBORHOODS * 0.9 
     ]
         
     print(f"Using reference point: {reference_point}")
     
-    # Load solutions from all files
+   
     algorithm_solutions = {}
     
     for file_path in result_files:

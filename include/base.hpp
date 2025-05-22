@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vector>
-#include <cmath> // Adicione esta linha para resolver o erro de std::abs
+#include <cmath> 
 
 namespace tourist {
 

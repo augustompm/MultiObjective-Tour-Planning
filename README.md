@@ -1,62 +1,47 @@
-# MultiObjective-Tour-Planning
+<div align="center">
+  <img src="app/images/logo-1.png" alt="Multi-Objective Tour Planning Logo" width="150" height="150">
+</div>
 
-Planejamento de rotas turísticas de um dia no Rio de Janeiro utilizando otimização multiobjetivo.
+# Multi-Objective Tour Planning - Rio de Janeiro
+
+Sistema de otimização multiobjetivo para planejamento de rotas turísticas no Rio de Janeiro utilizando o algoritmo NSGA-II.
 
 ## Sobre o Projeto
 
-Este repositório contém a implementação de um sistema de otimização multiobjetivo para planejamento de rotas turísticas no Rio de Janeiro, desenvolvido como parte de uma pesquisa acadêmica. O sistema utiliza o algoritmo NSGA-II para gerar roteiros otimizados considerando quatro objetivos simultâneos:
+Este projeto implementa um sistema de otimização multiobjetivo para gerar roteiros turísticos de um dia no Rio de Janeiro. O sistema utiliza o algoritmo NSGA-II para encontrar soluções que balanceiam quatro objetivos simultaneamente:
 
-1. Minimização de custos
+1. Minimização de custos de transporte e entrada em atrações
 2. Minimização de tempo de deslocamento
 3. Maximização de atrações visitadas
-4. Maximização da diversidade de bairros
+4. Maximização de bairros visitados
 
-## Estrutura do Repositório
+## 1. Aplicativo Web
 
-- `/src` - Código-fonte do algoritmo NSGA-II adaptado para o problema de roteirização turística
-- `/data` - Arquivos de dados das atrações e matrizes de distância/tempo
-- `/visualization` - Aplicativo web "Um Dia no Rio" para visualização e navegação das soluções
-- `/results` - Resultados experimentais e métricas de avaliação
-- `/metrics` - Ferramentas auxiliares, incluindo implementação do algoritmo HSO para cálculo de hipervolume
+O aplicativo é desenvolvido em **Flask/Dash** com visualizações **D3.js** e **Plotly**, oferecendo interface responsiva para exploração interativa das soluções do Pareto.
 
-## Aplicativo "Um Dia no Rio"
-
-O diretório `/visualization` contém uma aplicação web desenvolvida com Flask e Dash que permite aos usuários:
-
-- Visualizar o conjunto de soluções não-dominadas através de múltiplas técnicas de visualização
-- Explorar interativamente os roteiros gerados
-- Selecionar a solução que melhor atenda às suas preferências entre os quatro objetivos
-- Ver detalhes de cada roteiro, incluindo sequência de atrações, horários e meios de transporte
-
-### Executando o Aplicativo
-
-Para rodar o aplicativo localmente:
-
+### Instalação e Execução
 ```bash
-cd visualization
+cd app
 pip install -r requirements.txt
 python app.py
 ```
 
-O aplicativo estará disponível em `http://localhost:8050`
+Acesse em: **http://localhost:8051**
 
-## Requisitos
+**Mobile/Tablet**: Acesse o mesmo endereço no navegador do dispositivo conectado à mesma rede local.
 
-- C++17+ (compilador compatível)
-- CMake 3.15+
-- Python 3.8+ (para visualização)
-- Bibliotecas Python listadas em `visualization/requirements.txt`
+### Funcionalidades
+- Visualização de coordenadas paralelas das soluções não-dominadas
+- Harmony visualization multi-objetivo com D3.js
+- Navegação responsiva entre soluções
+- Detalhes completos de cada roteiro (custos, tempos, atrações)
 
-## Uso do Algoritmo
+## 2. Algoritmo NSGA-II
 
-Para compilar e executar o algoritmo NSGA-II:
+### Pré-requisitos
+- C++17+ e CMake 3.15+
 
-```bash
-./run.sh
-```
-
-Ou manualmente:
-
+### Compilação
 ```bash
 mkdir build && cd build
 cmake ..
@@ -64,20 +49,34 @@ cmake --build .
 ./bin/tourist_route
 ```
 
-## Avaliação de Hipervolume
-
-Para calcular o hipervolume das soluções geradas:
-
+### Métricas
 ```bash
 cd metrics
 python calculate_hypervolume.py
+python calculate_binary_coverage.py
 ```
+
+## Estrutura do Projeto
+```
+├── src/           # Código-fonte C++ do NSGA-II
+├── include/       # Headers
+├── data/          # Dados das atrações
+├── results/       # Resultados experimentais
+├── app/           # Aplicativo Flask/Dash
+```
+
+## Autores
+
+| Nome | Email | Instituição |
+|------|-------|-------------|
+| Augusto Magalhães Pinto de Mendonça | augustompm@id.uff.br | Universidade Federal Fluminense |
+| Filipe Pessoa Sousa | filipe.sousa@pos.ime.uerj.br | Universidade do Estado do Rio de Janeiro |
+| Igor Machado Coelho | imcoelho@ic.uff.br | Universidade Federal Fluminense |
+
 ## Licença
 
-Este projeto está licenciado sob a licença MIT.
+Este projeto está licenciado sob a **Creative Commons Atribuição-NãoComercial (CC BY-NC)**.
 
-## Contato
+**Resumo**: Permitido usar, estudar e modificar para fins acadêmicos e não-comerciais. Obrigatório dar crédito aos autores. Proibido uso comercial sem autorização.
 
-- Augusto Magalhães Pinto de Mendonça - [augustompm@id.uff.br](mailto:augustompm@id.uff.br)
-- Filipe Pessoa Sousa - [filipe.sousa@pos.ime.uerj.br](mailto:filipe.sousa@pos.ime.uerj.br)
-- Igor Machado Coelho - [imcoelho@ic.uff.br](mailto:imcoelho@ic.uff.br)
+Detalhes: [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)

@@ -52,9 +52,9 @@ private:
     std::string name_;
     std::string neighborhood_;  // Added neighborhood field
     double latitude_, longitude_;
-    int visit_time_;        // em minutos
-    double cost_;           // em reais
-    int opening_time_;      // em minutos desde meia-noite
+    int visit_time_;        
+    double cost_;           
+    int opening_time_;      
     int closing_time_;      // em minutos desde meia-noite
 };
 

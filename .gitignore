@@ -1,3 +1,4 @@
+.gitignore
 # Arquivos de chaves de API
 .key
 OSRM/.key
@@ -8,3 +9,6 @@ CLAUDE.md
 
 # Local unit tests (development only)
 app/unit/
+build/
+metrics/
+.vscode
