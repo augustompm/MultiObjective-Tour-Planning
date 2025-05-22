@@ -2,7 +2,7 @@
   <img src="app/images/logo-1.png" alt="Multi-Objective Tour Planning Logo" width="150" height="150">
 </div>
 
-# Multi-Objective Tour Planning - Rio de Janeiro
+# Otimização Multiobjetivo para Planejamento de Rotas Turísticas: Um Dia no Rio de Janeiro
 
 Sistema de otimização multiobjetivo para planejamento de rotas turísticas no Rio de Janeiro utilizando o algoritmo NSGA-II.
 
